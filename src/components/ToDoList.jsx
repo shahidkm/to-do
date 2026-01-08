@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Check, Trash2, Edit2, Plus, X } from 'lucide-react';
-import { supabase } from "../supabase";
+import { Check, Trash2, Edit2, Plus, X, RefreshCw, Camera, Clock } from 'lucide-react';
 
 export default function TodoList() {
   const [todos, setTodos] = useState([]);
@@ -8,109 +7,117 @@ export default function TodoList() {
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [profileImage, setProfileImage] = useState(localStorage.getItem('profileImage') || null);
+  const [lastRegenerate, setLastRegenerate] = useState(localStorage.getItem('lastRegenerate') || null);
+  const [imageUrl, setImageUrl] = useState('');
+  const [showUrlInput, setShowUrlInput] = useState(false);
+
+  const defaultTodos = [
+    "Check Pick out Chicken at 9 am",
+    "Learn ReactJs at 12 pm",
+    "Have Launch at 1pm",
+    "Learn Html and Css at 3pm",
+    "Have Dinner at 8pm"
+  ];
 
   useEffect(() => {
     loadTodos();
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
   }, []);
 
-  // 📥 Fetch Todos
+  const formatDateTime = () => {
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    const day = days[currentTime.getDay()];
+    const date = currentTime.getDate();
+    const month = months[currentTime.getMonth()];
+    
+    let hours = currentTime.getHours();
+    const minutes = currentTime.getMinutes().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    
+    return {
+      dayStr: day,
+      dateStr: `${date} ${month}`,
+      timeStr: `${hours}:${minutes} ${ampm}`
+    };
+  };
+
+  const { dayStr, dateStr, timeStr } = formatDateTime();
+
   const loadTodos = async () => {
     setLoading(true);
-
-    const { data, error } = await supabase
-      .from('ToDo')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) {
+    
+    try {
+      const storedTodos = localStorage.getItem('todos');
+      if (storedTodos) {
+        setTodos(JSON.parse(storedTodos));
+      }
+    } catch (error) {
       console.error("Error loading todos:", error);
-    } else {
-      setTodos(data || []);
     }
-
+    
     setLoading(false);
   };
 
-  // ➕ Add Todo
-  const handleAddTodo = async () => {
-    if (!newTodo.trim()) return;
-
-    const { data, error } = await supabase
-      .from('ToDo')
-      .insert([{ title: newTodo.trim(), completed: false }]) // ✅ Use title, not text
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Error adding todo:", error);
-    } else {
-      setTodos([data, ...todos]);
-      setNewTodo('');
-    }
+  const saveTodos = (todosToSave) => {
+    localStorage.setItem('todos', JSON.stringify(todosToSave));
   };
 
-  // ⏎ Enter key add
+  const handleAddTodo = () => {
+    if (!newTodo.trim()) return;
+
+    const newTodoItem = {
+      id: Date.now(),
+      title: newTodo.trim(),
+      completed: false,
+      active: true,
+      created_at: new Date().toISOString()
+    };
+
+    const updatedTodos = [newTodoItem, ...todos];
+    setTodos(updatedTodos);
+    saveTodos(updatedTodos);
+    setNewTodo('');
+  };
+
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') handleAddTodo();
   };
 
-  // ✅ Toggle complete
-  const handleToggle = async (id) => {
-    const todo = todos.find(t => t.id === id);
-    if (!todo) return;
-
-    const { data, error } = await supabase
-      .from('ToDo')
-      .update({ completed: !todo.completed })
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (!error) {
-      setTodos(todos.map(t => (t.id === id ? data : t)));
-    } else {
-      console.error("Error toggling todo:", error);
-    }
+  const handleToggle = (id) => {
+    const updatedTodos = todos.map(t => 
+      t.id === id ? { ...t, completed: !t.completed } : t
+    );
+    setTodos(updatedTodos);
+    saveTodos(updatedTodos);
   };
 
-  // ❌ Delete Todo
-  const handleDelete = async (id) => {
-    const { error } = await supabase
-      .from('ToDo')
-      .delete()
-      .eq('id', id);
-
-    if (!error) {
-      setTodos(todos.filter(t => t.id !== id));
-    } else {
-      console.error("Error deleting todo:", error);
-    }
+  const handleDelete = (id) => {
+    const updatedTodos = todos.filter(t => t.id !== id);
+    setTodos(updatedTodos);
+    saveTodos(updatedTodos);
   };
 
-  // ✏️ Start edit
   const startEdit = (id, text) => {
     setEditingId(id);
     setEditText(text);
   };
 
-  // 💾 Save edit
-  const handleEdit = async (id) => {
+  const handleEdit = (id) => {
     if (!editText.trim()) return;
 
-    const { data, error } = await supabase
-      .from('ToDo')
-      .update({ title: editText.trim() }) // ✅ Use title, not text
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (!error) {
-      setTodos(todos.map(t => (t.id === id ? data : t)));
-      setEditingId(null);
-      setEditText('');
-    } else {
-      console.error("Error editing todo:", error);
-    }
+    const updatedTodos = todos.map(t => 
+      t.id === id ? { ...t, title: editText.trim() } : t
+    );
+    setTodos(updatedTodos);
+    saveTodos(updatedTodos);
+    setEditingId(null);
+    setEditText('');
   };
 
   const cancelEdit = () => {
@@ -118,89 +125,381 @@ export default function TodoList() {
     setEditText('');
   };
 
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result;
+        setProfileImage(base64String);
+        localStorage.setItem('profileImage', base64String);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleUrlSubmit = () => {
+    if (imageUrl.trim()) {
+      setProfileImage(imageUrl.trim());
+      localStorage.setItem('profileImage', imageUrl.trim());
+      setImageUrl('');
+      setShowUrlInput(false);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setProfileImage(null);
+    localStorage.removeItem('profileImage');
+  };
+
+  const handleRegenerate = () => {
+    const today = new Date().toDateString();
+    
+    if (lastRegenerate === today) {
+      alert('You can only regenerate todos once per day!');
+      return;
+    }
+
+    const newTodos = defaultTodos.map((todoTitle, index) => ({
+      id: Date.now() + index,
+      title: todoTitle,
+      completed: false,
+      active: true,
+      created_at: new Date().toISOString()
+    }));
+
+    setTodos(newTodos);
+    saveTodos(newTodos);
+    setLastRegenerate(today);
+    localStorage.setItem('lastRegenerate', today);
+  };
+
   const completedCount = todos.filter(t => t.completed).length;
+  const canRegenerate = lastRegenerate !== new Date().toDateString();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 py-8 px-4">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-sky-50 to-blue-100 py-12 px-4">
+      <div className="max-w-md mx-auto">
 
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-blue-600 mb-2">My Todo List</h1>
-          <p className="text-blue-400">Stay organized and productive</p>
+        {/* Profile Image Section */}
+        <div 
+          className="bg-white rounded-3xl p-8 mb-8 text-center relative overflow-hidden"
+          style={{
+            boxShadow: '0 25px 50px rgba(59, 130, 246, 0.15), 0 10px 30px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9)'
+          }}
+        >
+          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-400 via-sky-400 to-blue-500 rounded-t-3xl"></div>
+          
+          {profileImage ? (
+            <div className="relative inline-block">
+              <div 
+                className="w-48 h-48 mx-auto mb-4 relative overflow-hidden rounded-3xl"
+                style={{
+                  transform: 'perspective(1000px) rotateX(5deg)',
+                  transformStyle: 'preserve-3d',
+                  boxShadow: '0 20px 50px rgba(59, 130, 246, 0.25), 0 10px 25px rgba(0, 0, 0, 0.1)'
+                }}
+              >
+                <img 
+                  src={profileImage} 
+                  alt="Profile" 
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23e0e7ff" width="200" height="200"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-size="16"%3EImage Error%3C/text%3E%3C/svg%3E';
+                  }}
+                />
+              </div>
+              <button
+                onClick={handleRemoveImage}
+                className="absolute -top-2 -right-2 w-10 h-10 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-all transform hover:scale-110"
+                style={{
+                  boxShadow: '0 8px 20px rgba(239, 68, 68, 0.35)'
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+          ) : (
+            <div 
+              className="w-48 h-48 mx-auto mb-4 relative"
+              style={{
+                transform: 'perspective(1000px) rotateX(5deg)',
+                transformStyle: 'preserve-3d'
+              }}
+            >
+              <div 
+                className="w-full h-full rounded-3xl border-4 border-dashed border-blue-200 flex items-center justify-center bg-gradient-to-br from-white to-blue-50"
+                style={{
+                  boxShadow: '0 15px 40px rgba(59, 130, 246, 0.15), 0 8px 20px rgba(0, 0, 0, 0.08)'
+                }}
+              >
+                <Camera className="text-blue-300" size={64} strokeWidth={1.5} />
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-3 mt-4">
+            <label className="cursor-pointer">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+              <div 
+                className="px-6 py-3 bg-gradient-to-br from-blue-400 to-sky-500 text-white rounded-2xl hover:from-blue-500 hover:to-sky-600 transition-all transform hover:scale-105 inline-block"
+                style={{
+                  boxShadow: '0 8px 20px rgba(59, 130, 246, 0.3)'
+                }}
+              >
+                <span className="text-sm font-medium">Upload Image</span>
+              </div>
+            </label>
+
+            {!showUrlInput ? (
+              <button
+                onClick={() => setShowUrlInput(true)}
+                className="px-6 py-3 bg-white border-2 border-blue-300 text-blue-500 rounded-2xl hover:bg-blue-50 transition-all transform hover:scale-105"
+                style={{
+                  boxShadow: '0 8px 20px rgba(59, 130, 246, 0.15)'
+                }}
+              >
+                <span className="text-sm font-medium">Use Image URL</span>
+              </button>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleUrlSubmit()}
+                  placeholder="Enter image URL..."
+                  className="flex-1 px-4 py-3 border-2 border-blue-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:border-blue-400"
+                  style={{
+                    boxShadow: '0 4px 12px rgba(59, 130, 246, 0.1)'
+                  }}
+                />
+                <button
+                  onClick={handleUrlSubmit}
+                  className="px-5 py-3 bg-gradient-to-br from-blue-400 to-sky-500 text-white rounded-xl hover:from-blue-500 hover:to-sky-600 transition-all"
+                  style={{
+                    boxShadow: '0 8px 20px rgba(59, 130, 246, 0.3)'
+                  }}
+                >
+                  <Check size={20} />
+                </button>
+                <button
+                  onClick={() => {
+                    setShowUrlInput(false);
+                    setImageUrl('');
+                  }}
+                  className="px-5 py-3 bg-gray-100 text-gray-500 rounded-xl hover:bg-gray-200 transition-all"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Add Todo */}
-        <div className="mb-6 flex gap-2">
-          <input
-            type="text"
-            value={newTodo}
-            onChange={(e) => setNewTodo(e.target.value)}
-            onKeyDown={handleKeyPress}
-            placeholder="What needs to be done?"
-            className="flex-1 px-4 py-3 rounded-lg border-2 border-blue-200 focus:border-blue-400 focus:outline-none"
-          />
-          <button
-            onClick={handleAddTodo}
-            className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg flex items-center gap-2"
+        {/* Clock Widget with 3D Effect */}
+        <div 
+          className="bg-white rounded-3xl p-8 mb-8 text-center relative overflow-hidden"
+          style={{
+            boxShadow: '0 25px 50px rgba(59, 130, 246, 0.15), 0 10px 30px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9)'
+          }}
+        >
+          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-400 via-sky-400 to-blue-500 rounded-t-3xl"></div>
+          
+          <div 
+            className="w-40 h-40 mx-auto mb-5 relative"
+            style={{
+              transform: 'perspective(1000px) rotateX(5deg)',
+              transformStyle: 'preserve-3d'
+            }}
           >
-            <Plus size={20} /> Add
+            <div 
+              className="w-full h-full rounded-full border-[12px] border-blue-50 flex items-center justify-center bg-gradient-to-br from-white to-blue-50"
+              style={{
+                boxShadow: '0 15px 40px rgba(59, 130, 246, 0.2), 0 8px 20px rgba(0, 0, 0, 0.08), inset 0 5px 15px rgba(255, 255, 255, 0.5)'
+              }}
+            >
+              <Clock className="text-blue-400" size={56} strokeWidth={2} />
+            </div>
+          </div>
+          
+          <div className="text-sm text-gray-500 font-medium mb-2">{dayStr}</div>
+          <div className="text-4xl font-bold text-gray-800 mb-3" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+            {timeStr}
+          </div>
+          <div className="text-sm text-gray-400">{dateStr}</div>
+        </div>
+
+        {/* Tasks List Header */}
+        <div className="flex items-center justify-between mb-5 px-2">
+          <h3 className="text-2xl font-bold text-gray-800" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+            Tasks List
+          </h3>
+          <button
+            onClick={handleRegenerate}
+            disabled={!canRegenerate}
+            className={`p-3 rounded-2xl transition-all transform hover:scale-105 ${
+              canRegenerate 
+                ? 'bg-gradient-to-br from-blue-400 to-sky-500 text-white hover:from-blue-500 hover:to-sky-600' 
+                : 'bg-gray-100 text-gray-300 cursor-not-allowed'
+            }`}
+            style={{
+              boxShadow: canRegenerate 
+                ? '0 8px 20px rgba(59, 130, 246, 0.3), 0 4px 10px rgba(0, 0, 0, 0.1)' 
+                : 'none'
+            }}
+          >
+            <RefreshCw size={20} />
           </button>
         </div>
 
-        {/* Stats */}
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6 flex justify-between text-sm">
-          <span>Total: <b>{todos.length}</b></span>
-          <span>Completed: <b>{completedCount}</b></span>
-          <span>Pending: <b>{todos.length - completedCount}</b></span>
+        {/* Add Todo Input with 3D Effect */}
+        <div className="mb-6">
+          <div 
+            className="relative bg-white rounded-2xl"
+            style={{
+              boxShadow: '0 10px 30px rgba(59, 130, 246, 0.12), 0 5px 15px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9)'
+            }}
+          >
+            <input
+              type="text"
+              value={newTodo}
+              onChange={(e) => setNewTodo(e.target.value)}
+              onKeyDown={handleKeyPress}
+              placeholder="Add new task..."
+              className="w-full px-6 py-5 pr-16 rounded-2xl border-2 border-transparent focus:border-blue-300 focus:outline-none text-gray-700 placeholder-gray-400 bg-transparent"
+            />
+            <button
+              onClick={handleAddTodo}
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-12 h-12 bg-gradient-to-br from-blue-400 to-sky-500 text-white rounded-xl flex items-center justify-center hover:from-blue-500 hover:to-sky-600 transition-all transform hover:scale-105"
+              style={{
+                boxShadow: '0 8px 20px rgba(59, 130, 246, 0.35), 0 4px 10px rgba(0, 0, 0, 0.1)'
+              }}
+            >
+              <Plus size={24} strokeWidth={2.5} />
+            </button>
+          </div>
         </div>
 
-        {/* Todo List */}
-        <div className="space-y-3">
-          {loading ? (
-            <p className="text-center">Loading...</p>
-          ) : todos.length === 0 ? (
-            <p className="text-center text-blue-400">No todos yet</p>
-          ) : (
-            todos.map(todo => (
-              <div key={todo.id} className="bg-white p-4 rounded-lg shadow flex items-center gap-3">
-
-                {editingId === todo.id ? (
-                  <>
-                    <input
-                      value={editText}
-                      onChange={(e) => setEditText(e.target.value)}
-                      className="flex-1 border px-3 py-2 rounded"
-                      autoFocus
-                    />
-                    <button onClick={() => handleEdit(todo.id)}><Check /></button>
-                    <button onClick={cancelEdit}><X /></button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => handleToggle(todo.id)}
-                      className={`w-6 h-6 border rounded flex items-center justify-center ${
-                        todo.completed ? 'bg-blue-500 text-white' : ''
-                      }`}
-                    >
-                      {todo.completed && <Check size={16} />}
-                    </button>
-
-                    <span className={`flex-1 ${todo.completed ? 'line-through text-gray-400' : ''}`}>
-                      {todo.title} {/* ✅ Use title */}
-                    </span>
-
-                    <button onClick={() => startEdit(todo.id, todo.title)}>
-                      <Edit2 />
-                    </button>
-                    <button onClick={() => handleDelete(todo.id)}>
-                      <Trash2 />
-                    </button>
-                  </>
-                )}
+        {/* Tasks List with Enhanced 3D */}
+        <div 
+          className="bg-white rounded-3xl p-6"
+          style={{
+            boxShadow: '0 25px 50px rgba(59, 130, 246, 0.15), 0 10px 30px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9)'
+          }}
+        >
+          <div className="space-y-1">
+            {loading ? (
+              <div className="text-center py-10 text-gray-400 text-sm">
+                Loading tasks...
               </div>
-            ))
+            ) : todos.length === 0 ? (
+              <div className="text-center py-10">
+                <p className="text-gray-400 text-sm mb-2">No tasks yet</p>
+                <p className="text-gray-300 text-xs">Add a task or regenerate daily todos</p>
+              </div>
+            ) : (
+              todos.map((todo, index) => (
+                <div key={todo.id}>
+                  {editingId === todo.id ? (
+                    <div className="flex items-center gap-3 py-4 px-2">
+                      <input
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        className="flex-1 px-4 py-3 border-2 border-blue-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:border-blue-400"
+                        style={{
+                          boxShadow: '0 4px 12px rgba(59, 130, 246, 0.1)'
+                        }}
+                        autoFocus
+                      />
+                      <button 
+                        onClick={() => handleEdit(todo.id)}
+                        className="p-2.5 hover:bg-green-50 rounded-xl text-green-500 transition-all transform hover:scale-110"
+                        style={{
+                          boxShadow: '0 4px 12px rgba(34, 197, 94, 0.15)'
+                        }}
+                      >
+                        <Check size={20} />
+                      </button>
+                      <button 
+                        onClick={cancelEdit}
+                        className="p-2.5 hover:bg-red-50 rounded-xl text-red-400 transition-all transform hover:scale-110"
+                        style={{
+                          boxShadow: '0 4px 12px rgba(239, 68, 68, 0.15)'
+                        }}
+                      >
+                        <X size={20} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-4 py-4 px-2 hover:bg-blue-50/50 rounded-xl transition-all">
+                      <button
+                        onClick={() => handleToggle(todo.id)}
+                        className={`flex-shrink-0 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all transform hover:scale-110 ${
+                          todo.completed 
+                            ? 'bg-gradient-to-br from-blue-400 to-sky-500 border-blue-400' 
+                            : 'border-gray-300 hover:border-blue-300 bg-white'
+                        }`}
+                        style={{
+                          boxShadow: todo.completed 
+                            ? '0 6px 16px rgba(59, 130, 246, 0.3), 0 3px 8px rgba(0, 0, 0, 0.1)' 
+                            : '0 2px 8px rgba(0, 0, 0, 0.06)'
+                        }}
+                      >
+                        {todo.completed && <Check size={16} className="text-white" strokeWidth={3} />}
+                      </button>
+
+                      <span className={`flex-1 text-sm ${
+                        todo.completed 
+                          ? 'line-through text-gray-400' 
+                          : 'text-gray-700 font-medium'
+                      }`}>
+                        {todo.title}
+                      </span>
+
+                      <button 
+                        onClick={() => startEdit(todo.id, todo.title)}
+                        className="p-2 hover:bg-blue-100 rounded-xl text-blue-500 transition-all transform hover:scale-110"
+                        style={{
+                          boxShadow: '0 4px 12px rgba(59, 130, 246, 0.15)'
+                        }}
+                      >
+                        <Edit2 size={18} />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(todo.id)}
+                        className="p-2 hover:bg-red-50 rounded-xl text-red-400 transition-all transform hover:scale-110"
+                        style={{
+                          boxShadow: '0 4px 12px rgba(239, 68, 68, 0.15)'
+                        }}
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  )}
+                  {index < todos.length - 1 && <div className="border-b border-gray-100 mx-2"></div>}
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Task Stats with 3D Effect */}
+          {todos.length > 0 && (
+            <div 
+              className="mt-6 pt-5 border-t-2 border-gray-100 flex justify-between text-xs text-gray-500 bg-gradient-to-br from-blue-50/30 to-sky-50/30 rounded-2xl p-4 -mx-2"
+              style={{
+                boxShadow: 'inset 0 2px 8px rgba(59, 130, 246, 0.08)'
+              }}
+            >
+              <span>Total: <strong className="text-gray-700 text-sm">{todos.length}</strong></span>
+              <span>Completed: <strong className="text-blue-500 text-sm">{completedCount}</strong></span>
+              <span>Pending: <strong className="text-orange-400 text-sm">{todos.length - completedCount}</strong></span>
+            </div>
           )}
         </div>
 
