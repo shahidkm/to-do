@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Check, Trash2, Edit2, Plus, X, RefreshCw, Camera, Clock } from 'lucide-react';
-
+import QuoteTabs from './QuoteTabs';
 export default function TodoList() {
   const [todos, setTodos] = useState([]);
   const [newTodo, setNewTodo] = useState('');
@@ -8,7 +8,7 @@ export default function TodoList() {
   const [editText, setEditText] = useState('');
   const [loading, setLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [profileImage, setProfileImage] = useState(localStorage.getItem('profileImage') || null);
+  const [profileImage, setProfileImage] = useState(localStorage.getItem('profileImage') || '/MyImage01.JPG');
   const [lastRegenerate, setLastRegenerate] = useState(localStorage.getItem('lastRegenerate') || null);
   const [imageUrl, setImageUrl] = useState('');
   const [showUrlInput, setShowUrlInput] = useState(false);
@@ -179,7 +179,7 @@ export default function TodoList() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-sky-50 to-blue-100 py-12 px-4">
-      <div className="max-w-md mx-auto">
+      <div className="max-w-md mx-auto mb-12">
 
         {/* Profile Image Section */}
         <div 
@@ -504,6 +504,7 @@ export default function TodoList() {
         </div>
 
       </div>
+      <QuoteTabs/>
     </div>
   );
 }
