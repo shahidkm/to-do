@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, TrendingUp, Calendar, Award, Star, Target, CheckCircle, XCircle, BarChart3, Sparkles, Zap, Activity, CircleDot } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
-
+import Navbar from './NavBar';
 const supabaseUrl = 'https://quufeiwzsgiuwkeyjjns.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1dWZlaXd6c2dpdXdrZXlqam5zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4ODQ5OTYsImV4cCI6MjA4MzQ2MDk5Nn0.KL0XNEg4o4RVMJOfAQdWQekug_sw2I0KNTLkj_73_sg';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -284,6 +284,11 @@ export default function PerformanceDashboard() {
   }
 
   return (
+<div>
+<Navbar/>
+
+
+
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 py-8 px-4">
       <div className="max-w-7xl mx-auto">
         
@@ -525,6 +530,7 @@ export default function PerformanceDashboard() {
         </div>
 
       </div>
+    </div>
     </div>
   );
 }

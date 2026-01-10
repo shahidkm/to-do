@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Gift, Award, Star, Sparkles, Medal, Crown, Zap, Trash2, X, Check, FileImage } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
-
+import Navbar from './NavBar';
 const supabaseUrl = 'https://quufeiwzsgiuwkeyjjns.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1dWZlaXd6c2dpdXdrZXlqam5zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4ODQ5OTYsImV4cCI6MjA4MzQ2MDk5Nn0.KL0XNEg4o4RVMJOfAQdWQekug_sw2I0KNTLkj_73_sg';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -117,41 +117,41 @@ export default function RewardsDashboard() {
 
   const addDefaultWeeklyRewards = async () => {
     const defaultRewards = [
-      { 
-        reward_type: 'weekly', 
-        week_count: 1, 
-        reward_title: 'Bronze Focus Badge', 
-        reward_description: 'Completed your first focused week',
-        image_url: 'https://images.unsplash.com/photo-1618344606923-f3ded1e29a1a?w=400&h=400&fit=crop'
-      },
-      { 
-        reward_type: 'weekly', 
-        week_count: 2, 
-        reward_title: 'Silver Discipline Badge', 
-        reward_description: 'Two weeks of consistent productivity',
-        image_url: 'https://images.unsplash.com/photo-1618344606904-2d91e6f6ec00?w=400&h=400&fit=crop'
-      },
-      { 
-        reward_type: 'weekly', 
-        week_count: 3, 
-        reward_title: 'Gold Consistency Badge', 
-        reward_description: 'Three weeks without breaking the flow',
-        image_url: 'https://images.unsplash.com/photo-1618344604068-09d7b84b815e?w=400&h=400&fit=crop'
-      },
-      { 
-        reward_type: 'weekly', 
-        week_count: 4, 
-        reward_title: 'Platinum Performer Badge', 
-        reward_description: 'One full month of strong discipline',
-        image_url: 'https://images.unsplash.com/photo-1618344606904-2d91e6f6ec00?w=400&h=400&fit=crop'
-      },
-      { 
-        reward_type: 'weekly', 
-        week_count: 8, 
-        reward_title: 'Diamond Master Badge', 
-        reward_description: 'Two months of unstoppable focus',
-        image_url: 'https://images.unsplash.com/photo-1618344606923-f3ded1e29a1a?w=400&h=400&fit=crop'
-      }
+    //   { 
+    //     reward_type: 'weekly', 
+    //     week_count: 1, 
+    //     reward_title: 'Bronze Focus Badge', 
+    //     reward_description: 'Completed your first focused week',
+    //     image_url: 'https://images.unsplash.com/photo-1618344606923-f3ded1e29a1a?w=400&h=400&fit=crop'
+    //   },
+    //   { 
+    //     reward_type: 'weekly', 
+    //     week_count: 2, 
+    //     reward_title: 'Silver Discipline Badge', 
+    //     reward_description: 'Two weeks of consistent productivity',
+    //     image_url: 'https://images.unsplash.com/photo-1618344606904-2d91e6f6ec00?w=400&h=400&fit=crop'
+    //   },
+    //   { 
+    //     reward_type: 'weekly', 
+    //     week_count: 3, 
+    //     reward_title: 'Gold Consistency Badge', 
+    //     reward_description: 'Three weeks without breaking the flow',
+    //     image_url: 'https://images.unsplash.com/photo-1618344604068-09d7b84b815e?w=400&h=400&fit=crop'
+    //   },
+    //   { 
+    //     reward_type: 'weekly', 
+    //     week_count: 4, 
+    //     reward_title: 'Platinum Performer Badge', 
+    //     reward_description: 'One full month of strong discipline',
+    //     image_url: 'https://images.unsplash.com/photo-1618344606904-2d91e6f6ec00?w=400&h=400&fit=crop'
+    //   },
+    //   { 
+    //     reward_type: 'weekly', 
+    //     week_count: 8, 
+    //     reward_title: 'Diamond Master Badge', 
+    //     reward_description: 'Two months of unstoppable focus',
+    //     image_url: 'https://images.unsplash.com/photo-1618344606923-f3ded1e29a1a?w=400&h=400&fit=crop'
+    //   }
     ];
 
     try {
@@ -206,6 +206,8 @@ export default function RewardsDashboard() {
   const monthlyRewards = rewards.filter(r => r.reward_type === 'monthly');
 
   return (
+    <div>
+        <Navbar/>
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 py-8 px-4">
       <div className="max-w-7xl mx-auto">
         
@@ -409,7 +411,7 @@ export default function RewardsDashboard() {
                         <img 
                           src={reward.image_url} 
                           alt={reward.reward_title}
-                          className={`w-full h-40 object-cover transition-all duration-300 hover:scale-105 ${
+                          className={`w-full object-cover transition-all duration-300 hover:scale-105 ${
                             reward.unlocked ? 'grayscale-0' : 'grayscale opacity-50'
                           }`}
                         />
@@ -605,6 +607,7 @@ export default function RewardsDashboard() {
         )}
 
       </div>
+    </div>
     </div>
   );
 }

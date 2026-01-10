@@ -1,10 +1,10 @@
 import React from 'react';
-import TodoList from './components/ToDoList';
+import RoutesConfig from './components/Routes';
 
 function App() {
   return (
     <div className="App">
-      <TodoList />
+      <RoutesConfig />
     </div>
   );
 }

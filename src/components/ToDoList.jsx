@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Check, Trash2, Edit2, Plus, X, RefreshCw, Camera, Clock } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
-import PerformanceDashboard from './PerformanceDashboard';
-import RewardsDashboard from './RewardsDashboard';
+import Navbar from './NavBar';
 
-import PlansPage from './PlansPage';
 
 const supabaseUrl = 'https://quufeiwzsgiuwkeyjjns.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1dWZlaXd6c2dpdXdrZXlqam5zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4ODQ5OTYsImV4cCI6MjA4MzQ2MDk5Nn0.KL0XNEg4o4RVMJOfAQdWQekug_sw2I0KNTLkj_73_sg';
@@ -23,11 +21,10 @@ export default function TodoList() {
   const [showUrlInput, setShowUrlInput] = useState(false);
 
   const defaultTodos = [
-    "Check Pick out Chicken at 9 am",
-    "Learn ReactJs at 12 pm",
-    "Have Launch at 1pm",
-    "Learn Html and Css at 3pm",
-    "Have Dinner at 8pm"
+    "Dont Be Aggressive",
+    "No Smoking",
+    "Self Respect",
+  
   ];
 
   useEffect(() => {
@@ -252,6 +249,10 @@ export default function TodoList() {
   const canRegenerate = lastRegenerate !== new Date().toDateString();
 
   return (
+    <div>
+<Navbar/>
+
+   
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-sky-50 to-blue-100 py-12 px-4">
       <div className="max-w-md mx-auto mb-12">
 
@@ -582,11 +583,7 @@ export default function TodoList() {
 
       </div>
 
-
-      <PerformanceDashboard/>
-      <RewardsDashboard/>
-     
-      <PlansPage/>
     </div>
+     </div>
   );
 }
