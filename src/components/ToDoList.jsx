@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Check, Trash2, Edit2, Plus, X, RefreshCw, Camera, Clock } from 'lucide-react';
-import QuoteTabs from './QuoteTabs';
+import { createClient } from '@supabase/supabase-js';
+import PerformanceDashboard from './PerformanceDashboard';
+import RewardsDashboard from './RewardsDashboard';
+
+import PlansPage from './PlansPage';
+
+const supabaseUrl = 'https://quufeiwzsgiuwkeyjjns.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1dWZlaXd6c2dpdXdrZXlqam5zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4ODQ5OTYsImV4cCI6MjA4MzQ2MDk5Nn0.KL0XNEg4o4RVMJOfAQdWQekug_sw2I0KNTLkj_73_sg';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
 export default function TodoList() {
   const [todos, setTodos] = useState([]);
   const [newTodo, setNewTodo] = useState('');
@@ -53,10 +62,15 @@ export default function TodoList() {
     setLoading(true);
     
     try {
-      const storedTodos = localStorage.getItem('todos');
-      if (storedTodos) {
-        setTodos(JSON.parse(storedTodos));
-      }
+      const { data, error } = await supabase
+        .from('ToDo')
+        .select('*')
+        .eq('active', true)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      setTodos(data || []);
     } catch (error) {
       console.error("Error loading todos:", error);
     }
@@ -64,43 +78,74 @@ export default function TodoList() {
     setLoading(false);
   };
 
-  const saveTodos = (todosToSave) => {
-    localStorage.setItem('todos', JSON.stringify(todosToSave));
-  };
-
-  const handleAddTodo = () => {
+  const handleAddTodo = async () => {
     if (!newTodo.trim()) return;
 
-    const newTodoItem = {
-      id: Date.now(),
-      title: newTodo.trim(),
-      completed: false,
-      active: true,
-      created_at: new Date().toISOString()
-    };
+    try {
+      const { data, error } = await supabase
+        .from('ToDo')
+        .insert([
+          {
+            title: newTodo.trim(),
+            completed: false,
+            active: true
+          }
+        ])
+        .select();
 
-    const updatedTodos = [newTodoItem, ...todos];
-    setTodos(updatedTodos);
-    saveTodos(updatedTodos);
-    setNewTodo('');
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setTodos([data[0], ...todos]);
+        setNewTodo('');
+      }
+    } catch (error) {
+      console.error("Error adding todo:", error);
+      alert("Failed to add todo. Please try again.");
+    }
   };
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') handleAddTodo();
   };
 
-  const handleToggle = (id) => {
-    const updatedTodos = todos.map(t => 
-      t.id === id ? { ...t, completed: !t.completed } : t
-    );
-    setTodos(updatedTodos);
-    saveTodos(updatedTodos);
+  const handleToggle = async (id) => {
+    const todo = todos.find(t => t.id === id);
+    if (!todo) return;
+
+    try {
+      const { error } = await supabase
+        .from('ToDo')
+        .update({ completed: !todo.completed })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      const updatedTodos = todos.map(t => 
+        t.id === id ? { ...t, completed: !t.completed } : t
+      );
+      setTodos(updatedTodos);
+    } catch (error) {
+      console.error("Error toggling todo:", error);
+      alert("Failed to update todo. Please try again.");
+    }
   };
 
-  const handleDelete = (id) => {
-    const updatedTodos = todos.filter(t => t.id !== id);
-    setTodos(updatedTodos);
-    saveTodos(updatedTodos);
+  const handleDelete = async (id) => {
+    try {
+      const { error } = await supabase
+        .from('ToDo')
+        .update({ active: false })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      const updatedTodos = todos.filter(t => t.id !== id);
+      setTodos(updatedTodos);
+    } catch (error) {
+      console.error("Error deleting todo:", error);
+      alert("Failed to delete todo. Please try again.");
+    }
   };
 
   const startEdit = (id, text) => {
@@ -108,16 +153,27 @@ export default function TodoList() {
     setEditText(text);
   };
 
-  const handleEdit = (id) => {
+  const handleEdit = async (id) => {
     if (!editText.trim()) return;
 
-    const updatedTodos = todos.map(t => 
-      t.id === id ? { ...t, title: editText.trim() } : t
-    );
-    setTodos(updatedTodos);
-    saveTodos(updatedTodos);
-    setEditingId(null);
-    setEditText('');
+    try {
+      const { error } = await supabase
+        .from('ToDo')
+        .update({ title: editText.trim() })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      const updatedTodos = todos.map(t => 
+        t.id === id ? { ...t, title: editText.trim() } : t
+      );
+      setTodos(updatedTodos);
+      setEditingId(null);
+      setEditText('');
+    } catch (error) {
+      console.error("Error editing todo:", error);
+      alert("Failed to edit todo. Please try again.");
+    }
   };
 
   const cancelEdit = () => {
@@ -152,7 +208,7 @@ export default function TodoList() {
     localStorage.removeItem('profileImage');
   };
 
-  const handleRegenerate = () => {
+  const handleRegenerate = async () => {
     const today = new Date().toDateString();
     
     if (lastRegenerate === today) {
@@ -160,18 +216,36 @@ export default function TodoList() {
       return;
     }
 
-    const newTodos = defaultTodos.map((todoTitle, index) => ({
-      id: Date.now() + index,
-      title: todoTitle,
-      completed: false,
-      active: true,
-      created_at: new Date().toISOString()
-    }));
+    try {
+      // First, mark all existing todos as inactive
+      const { error: deactivateError } = await supabase
+        .from('ToDo')
+        .update({ active: false })
+        .eq('active', true);
 
-    setTodos(newTodos);
-    saveTodos(newTodos);
-    setLastRegenerate(today);
-    localStorage.setItem('lastRegenerate', today);
+      if (deactivateError) throw deactivateError;
+
+      // Then insert new default todos
+      const newTodosData = defaultTodos.map(todoTitle => ({
+        title: todoTitle,
+        completed: false,
+        active: true
+      }));
+
+      const { data, error } = await supabase
+        .from('ToDo')
+        .insert(newTodosData)
+        .select();
+
+      if (error) throw error;
+
+      setTodos(data || []);
+      setLastRegenerate(today);
+      localStorage.setItem('lastRegenerate', today);
+    } catch (error) {
+      console.error("Error regenerating todos:", error);
+      alert("Failed to regenerate todos. Please try again.");
+    }
   };
 
   const completedCount = todos.filter(t => t.completed).length;
@@ -450,6 +524,7 @@ export default function TodoList() {
                             ? '0 6px 16px rgba(59, 130, 246, 0.3), 0 3px 8px rgba(0, 0, 0, 0.1)' 
                             : '0 2px 8px rgba(0, 0, 0, 0.06)'
                         }}
+                        title={todo.completed ? "Mark as not completed" : "Mark as completed"}
                       >
                         {todo.completed && <Check size={16} className="text-white" strokeWidth={3} />}
                       </button>
@@ -468,6 +543,7 @@ export default function TodoList() {
                         style={{
                           boxShadow: '0 4px 12px rgba(59, 130, 246, 0.15)'
                         }}
+                        title="Edit task"
                       >
                         <Edit2 size={18} />
                       </button>
@@ -477,6 +553,7 @@ export default function TodoList() {
                         style={{
                           boxShadow: '0 4px 12px rgba(239, 68, 68, 0.15)'
                         }}
+                        title="Delete task"
                       >
                         <Trash2 size={18} />
                       </button>
@@ -504,7 +581,12 @@ export default function TodoList() {
         </div>
 
       </div>
-      <QuoteTabs/>
+
+
+      <PerformanceDashboard/>
+      <RewardsDashboard/>
+     
+      <PlansPage/>
     </div>
   );
 }
