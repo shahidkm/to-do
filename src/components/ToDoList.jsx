@@ -75,32 +75,45 @@ export default function TodoList() {
     setLoading(false);
   };
 
-  const handleAddTodo = async () => {
-    if (!newTodo.trim()) return;
+const handleAddTodo = async () => {
+  const trimmedTodo = newTodo.trim();
+  if (!trimmedTodo) return;
 
-    try {
-      const { data, error } = await supabase
-        .from('ToDo')
-        .insert([
-          {
-            title: newTodo.trim(),
-            completed: false,
-            active: true
-          }
-        ])
-        .select();
+  // Check if todo with same title already exists today
+  const todayStr = new Date().toISOString().split('T')[0]; // e.g., '2026-01-10'
+  const duplicate = todos.some(
+    t => t.title === trimmedTodo && t.active && t.created_at.startsWith(todayStr)
+  );
 
-      if (error) throw error;
+  if (duplicate) {
+    alert("This task already exists today!");
+    return;
+  }
 
-      if (data && data.length > 0) {
-        setTodos([data[0], ...todos]);
-        setNewTodo('');
-      }
-    } catch (error) {
-      console.error("Error adding todo:", error);
-      alert("Failed to add todo. Please try again.");
+  try {
+    const { data, error } = await supabase
+      .from('ToDo')
+      .insert([
+        {
+          title: trimmedTodo,
+          completed: false,
+          active: true
+        }
+      ])
+      .select();
+
+    if (error) throw error;
+
+    if (data && data.length > 0) {
+      setTodos([data[0], ...todos]);
+      setNewTodo('');
     }
-  };
+  } catch (error) {
+    console.error("Error adding todo:", error);
+    alert("Failed to add todo. Please try again.");
+  }
+};
+
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') handleAddTodo();
@@ -205,45 +218,53 @@ export default function TodoList() {
     localStorage.removeItem('profileImage');
   };
 
-  const handleRegenerate = async () => {
-    const today = new Date().toDateString();
-    
-    if (lastRegenerate === today) {
-      alert('You can only regenerate todos once per day!');
-      return;
-    }
+ const handleRegenerate = async () => {
+  try {
+    const todayStr = new Date().toISOString().split('T')[0]; // e.g., '2026-01-10'
 
-    try {
-      // First, mark all existing todos as inactive
-      const { error: deactivateError } = await supabase
-        .from('ToDo')
-        .update({ active: false })
-        .eq('active', true);
+    // Fetch existing active todos for today
+    const { data: existingTodos, error: fetchError } = await supabase
+      .from('ToDo')
+      .select('title')
+      .gte('created_at', `${todayStr}T00:00:00`)
+      .lte('created_at', `${todayStr}T23:59:59`)
+      .eq('active', true);
 
-      if (deactivateError) throw deactivateError;
+    if (fetchError) throw fetchError;
 
-      // Then insert new default todos
-      const newTodosData = defaultTodos.map(todoTitle => ({
-        title: todoTitle,
+    const existingTitles = existingTodos.map(t => t.title);
+
+    // Filter defaultTodos to only add missing ones
+    const newTodosData = defaultTodos
+      .filter(title => !existingTitles.includes(title))
+      .map(title => ({
+        title,
         completed: false,
         active: true
       }));
 
-      const { data, error } = await supabase
-        .from('ToDo')
-        .insert(newTodosData)
-        .select();
-
-      if (error) throw error;
-
-      setTodos(data || []);
-      setLastRegenerate(today);
-      localStorage.setItem('lastRegenerate', today);
-    } catch (error) {
-      console.error("Error regenerating todos:", error);
-      alert("Failed to regenerate todos. Please try again.");
+    if (newTodosData.length === 0) {
+      alert('All default tasks already exist today!');
+      return;
     }
-  };
+
+    // Insert new todos
+    const { data: insertedData, error: insertError } = await supabase
+      .from('ToDo')
+      .insert(newTodosData)
+      .select();
+
+    if (insertError) throw insertError;
+
+    // Add newly inserted todos to state without removing existing ones
+    setTodos(prev => [...insertedData, ...prev]);
+  } catch (error) {
+    console.error('Error regenerating todos:', error);
+    alert('Failed to regenerate todos. Please try again.');
+  }
+};
+
+
 
   const completedCount = todos.filter(t => t.completed).length;
   const canRegenerate = lastRegenerate !== new Date().toDateString();
