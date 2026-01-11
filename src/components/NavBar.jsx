@@ -3,12 +3,12 @@ import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const navigate = useNavigate(); // 🔹 hook for programmatic navigation
+  const navigate = useNavigate();
 
   // Function to navigate and close mobile menu
   const handleNavigate = (path) => {
     navigate(path);
-    setIsOpen(false); // close mobile menu if open
+    setIsOpen(false);
   };
 
   return (
@@ -48,6 +48,12 @@ const Navbar = () => {
               className="text-blue-800 hover:bg-blue-200 px-3 py-2 rounded-md"
             >
               Plans
+            </button>
+            <button
+              onClick={() => handleNavigate("/inspirations")}
+              className="text-blue-800 hover:bg-blue-200 px-3 py-2 rounded-md"
+            >
+              Inspirations
             </button>
           </div>
 
@@ -119,6 +125,12 @@ const Navbar = () => {
             onClick={() => handleNavigate("/plans")}
           >
             Plans
+          </button>
+          <button
+            className="block text-blue-800 hover:bg-blue-200 px-3 py-2 rounded-md w-full text-left"
+            onClick={() => handleNavigate("/inspirations")}
+          >
+            Inspirations
           </button>
         </div>
       )}

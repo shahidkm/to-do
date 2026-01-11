@@ -55,14 +55,18 @@ export default function TodoList() {
 
   const { dayStr, dateStr, timeStr } = formatDateTime();
 
-  const loadTodos = async () => {
+ const loadTodos = async () => {
     setLoading(true);
     
     try {
+      const todayStr = new Date().toISOString().split('T')[0]; // e.g., '2026-01-10'
+      
       const { data, error } = await supabase
         .from('ToDo')
         .select('*')
         .eq('active', true)
+        .gte('created_at', `${todayStr}T00:00:00`)
+        .lte('created_at', `${todayStr}T23:59:59`)
         .order('created_at', { ascending: false });
       
       if (error) throw error;

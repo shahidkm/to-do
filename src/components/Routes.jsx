@@ -4,6 +4,7 @@ import TodoList from "./ToDoList";
 import PerformanceDashboard from "./PerformanceDashboard";
 import RewardsDashboard from "./RewardsDashboard";
 import PlansPage from "./PlansPage";
+import QuoteTabs from "./QuoteTabs";
 function RoutesConfig() {
   return (
     <Router>
@@ -12,6 +13,7 @@ function RoutesConfig() {
              <Route path="/performance-dashboard" element={<PerformanceDashboard/>} />
                   <Route path="/reward-dashboard" element={<RewardsDashboard/>} />
                        <Route path="/plans" element={<PlansPage/>} />
+                        <Route path="/inspirations" element={<QuoteTabs/>} />
       </Routes>
     </Router>
   );

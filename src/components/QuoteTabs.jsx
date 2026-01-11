@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Heart, Star, Sparkles, Coffee, Sun, Moon, Zap, Cloud } from 'lucide-react';
-
+import Navbar from './NavBar';
 export default function QuoteTabs() {
   const [activeTab, setActiveTab] = useState(0);
 
@@ -83,6 +83,8 @@ export default function QuoteTabs() {
   const Icon = activeContent.icon;
 
   return (
+    <div>
+        <Navbar/>
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-sky-50 py-12 px-4">
       <div className="max-w-6xl mx-auto">
         
@@ -221,6 +223,7 @@ export default function QuoteTabs() {
         </div>
 
       </div>
+    </div>
     </div>
   );
 }
