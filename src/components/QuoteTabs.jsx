@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Heart, Star, Sparkles, Coffee, Sun, Moon, Zap, Cloud } from 'lucide-react';
 import Navbar from './NavBar';
+import QuoteManager from './QuoteManager';
 export default function QuoteTabs() {
   const [activeTab, setActiveTab] = useState(0);
 
@@ -85,6 +86,7 @@ export default function QuoteTabs() {
   return (
     <div>
         <Navbar/>
+        <QuoteManager/>
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-sky-50 py-12 px-4">
       <div className="max-w-6xl mx-auto">
         
