@@ -23,6 +23,7 @@ export default function TodoList() {
   const defaultTodos = [
     "Be Metured",
     "Think 3 Times Before Talking and Doing Anything",
+    "Dont Talk About Myself And Be A Good Listner",
     "Dont Be Aggressive",
     "No Smoking",
     "Self Respect",
@@ -436,7 +437,7 @@ export default function TodoList() {
             </div>
             <div className="text-sm text-gray-400">{dateStr}</div>
           </div>
-<TodaysQuotes/>
+          <TodaysQuotes />
           {/* Tasks List Header */}
           <div className="flex items-center justify-between mb-5 px-2">
             <h3 className="text-2xl font-bold text-gray-800" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
@@ -446,8 +447,8 @@ export default function TodoList() {
               onClick={handleRegenerate}
               disabled={!canRegenerate}
               className={`p-3 rounded-2xl transition-all transform hover:scale-105 ${canRegenerate
-                  ? 'bg-gradient-to-br from-blue-400 to-sky-500 text-white hover:from-blue-500 hover:to-sky-600'
-                  : 'bg-gray-100 text-gray-300 cursor-not-allowed'
+                ? 'bg-gradient-to-br from-blue-400 to-sky-500 text-white hover:from-blue-500 hover:to-sky-600'
+                : 'bg-gray-100 text-gray-300 cursor-not-allowed'
                 }`}
               style={{
                 boxShadow: canRegenerate
@@ -542,8 +543,8 @@ export default function TodoList() {
                         <button
                           onClick={() => handleToggle(todo.id)}
                           className={`flex-shrink-0 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all transform hover:scale-110 ${todo.completed
-                              ? 'bg-gradient-to-br from-blue-400 to-sky-500 border-blue-400'
-                              : 'border-gray-300 hover:border-blue-300 bg-white'
+                            ? 'bg-gradient-to-br from-blue-400 to-sky-500 border-blue-400'
+                            : 'border-gray-300 hover:border-blue-300 bg-white'
                             }`}
                           style={{
                             boxShadow: todo.completed
@@ -556,8 +557,8 @@ export default function TodoList() {
                         </button>
 
                         <span className={`flex-1 text-sm ${todo.completed
-                            ? 'line-through text-gray-400'
-                            : 'text-gray-700 font-medium'
+                          ? 'line-through text-gray-400'
+                          : 'text-gray-700 font-medium'
                           }`}>
                           {todo.title}
                         </span>
