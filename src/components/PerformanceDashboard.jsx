@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, TrendingUp, Calendar, Award, Target, CheckCircle, XCircle, BarChart3, Sparkles, Zap, Activity, CircleDot, Check } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Navbar from './NavBar';
-
 const supabaseUrl = 'https://quufeiwzsgiuwkeyjjns.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1dWZlaXd6c2dpdXdrZXlqam5zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4ODQ5OTYsImV4cCI6MjA4MzQ2MDk5Nn0.KL0XNEg4o4RVMJOfAQdWQekug_sw2I0KNTLkj_73_sg';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -18,9 +18,11 @@ export default function PerformanceDashboard() {
   const [reasonInput, setReasonInput] = useState('');
   const [todos, setTodos] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [performanceHistory, setPerformanceHistory] = useState([]);
 
   useEffect(() => {
     loadDashboardData();
+    loadPerformanceHistory();
   }, []);
 
   useEffect(() => {
@@ -92,6 +94,28 @@ export default function PerformanceDashboard() {
       setTodos(data || []);
     } catch (error) {
       console.error("Error loading todos:", error);
+    }
+  };
+
+  const loadPerformanceHistory = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('daily_performance')
+        .select('day, completion_percentage, performance_status')
+        .order('day', { ascending: true })
+        .limit(30);
+      
+      if (error) throw error;
+      
+      const formattedData = (data || []).map(item => ({
+        date: new Date(item.day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        percentage: parseFloat(item.completion_percentage),
+        status: item.performance_status
+      }));
+      
+      setPerformanceHistory(formattedData);
+    } catch (error) {
+      console.error("Error loading performance history:", error);
     }
   };
 
@@ -272,6 +296,7 @@ export default function PerformanceDashboard() {
       setDailySummary(summaryResult);
       setDailyPerformance(perfResult);
       setDailyPoints(pointsResult);
+      loadPerformanceHistory();
       alert('Daily summary recalculated successfully!');
     } catch (error) {
       console.error("Error calculating summary:", error);
@@ -480,6 +505,97 @@ export default function PerformanceDashboard() {
                 </div>
               )}
             </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-8 shadow-2xl border border-slate-700 mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-2xl font-bold text-white mb-1">Performance Trend</h3>
+                <p className="text-slate-400 text-sm">Last 30 days completion rate</p>
+              </div>
+              <div className="flex items-center gap-4">
+                {performanceHistory.length > 0 && (
+                  <div className="text-right">
+                    <div className="text-3xl font-bold text-emerald-400">
+                      {performanceHistory[performanceHistory.length - 1]?.percentage.toFixed(1)}%
+                    </div>
+                    <div className="text-xs text-slate-400 flex items-center justify-end gap-1">
+                      <TrendingUp className="text-emerald-400" size={14} />
+                      <span>Current</span>
+                    </div>
+                  </div>
+                )}
+                <div className="p-2.5 bg-slate-800 rounded-xl border border-slate-700">
+                  <BarChart3 className="text-slate-400" size={22} strokeWidth={2.5} />
+                </div>
+              </div>
+            </div>
+            
+            {performanceHistory.length > 0 ? (
+              <div className="h-96 bg-slate-950 rounded-xl p-4 border border-slate-800">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={performanceHistory} margin={{ top: 20, right: 20, left: -10, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorGreen" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                    <XAxis 
+                      dataKey="date" 
+                      stroke="#64748b"
+                      tick={{ fill: '#64748b', fontSize: 11 }}
+                      tickLine={{ stroke: '#334155' }}
+                      axisLine={{ stroke: '#334155' }}
+                    />
+                    <YAxis 
+                      stroke="#64748b"
+                      tick={{ fill: '#64748b', fontSize: 11 }}
+                      tickLine={{ stroke: '#334155' }}
+                      axisLine={{ stroke: '#334155' }}
+                      domain={[0, 100]}
+                      ticks={[0, 25, 50, 75, 100]}
+                      tickFormatter={(value) => `${value}%`}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: '#0f172a', 
+                        border: '1px solid #334155',
+                        borderRadius: '8px',
+                        padding: '12px',
+                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)'
+                      }}
+                      labelStyle={{ fontWeight: 'bold', color: '#e2e8f0', marginBottom: '4px' }}
+                      formatter={(value) => [
+                        <span style={{ color: '#10b981', fontWeight: 'bold', fontSize: '16px' }}>
+                          {value.toFixed(1)}%
+                        </span>, 
+                        'Completion Rate'
+                      ]}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="percentage" 
+                      stroke="#10b981" 
+                      strokeWidth={2.5}
+                      fillOpacity={1} 
+                      fill="url(#colorGreen)"
+                      dot={{ fill: '#10b981', strokeWidth: 2, r: 4, stroke: '#0f172a' }}
+                      activeDot={{ r: 6, fill: '#10b981', stroke: '#fff', strokeWidth: 2 }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="text-center py-16 bg-slate-950 rounded-xl border border-slate-800">
+                <div className="w-20 h-20 bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-800">
+                  <TrendingUp className="text-slate-600" size={36} />
+                </div>
+                <p className="text-slate-300 font-medium text-lg mb-1">No performance data yet</p>
+                <p className="text-slate-500 text-sm">Complete tasks to start tracking your performance</p>
+              </div>
+            )}
           </div>
 
           <div className="bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/50 border border-slate-100">

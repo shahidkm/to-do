@@ -103,7 +103,7 @@ export default function TodaysQuotes() {
                         <div className="inline-flex items-center justify-center p-3 bg-gradient-to-br from-sky-50 to-blue-100 rounded-xl mb-3">
                             <Quote className="text-sky-600" size={32} strokeWidth={2.5} />
                         </div>
-                        <h1 className="text-3xl font-bold text-slate-800 mb-2">Today's Quotes</h1>
+                        <h1 className="text-3xl font-bold text-slate-800 mb-2">Today's Thought</h1>
                         <p className="text-slate-500 text-sm font-medium">{getDateStr()}</p>
                     </div>
 
@@ -114,7 +114,7 @@ export default function TodaysQuotes() {
                             </div>
                             <div className="text-left">
                                 <div className="text-2xl font-bold text-slate-800">{quotes.length}</div>
-                                <div className="text-xs text-slate-500 font-medium">Quotes Today</div>
+                                <div className="text-xs text-slate-500 font-medium">Thoughts Today</div>
                             </div>
                         </div>
                         <button
@@ -133,8 +133,8 @@ export default function TodaysQuotes() {
                         <div className="w-16 h-16 bg-gradient-to-br from-slate-50 to-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                             <Quote className="text-slate-400" size={32} />
                         </div>
-                        <h3 className="text-xl font-bold text-slate-700 mb-2">No quotes created today</h3>
-                        <p className="text-slate-500 text-sm">Start your day by creating an inspiring quote!</p>
+                        <h3 className="text-xl font-bold text-slate-700 mb-2">No more thoughts today</h3>
+                        <p className="text-slate-500 text-sm">Start your day by creating an inspiring thoughts!</p>
                     </div>
                 ) : (
                     <div className="space-y-4">
@@ -187,7 +187,7 @@ export default function TodaysQuotes() {
                                     {/* Time */}
                                     <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-200/50">
                                         <div className="text-xs text-slate-500 font-medium">
-                                            Quote #{quotes.length - index}
+                                            Thought #{quotes.length - index}
                                         </div>
                                         <div className="text-xs text-slate-500 font-medium">
                                             {new Date(quote.created_at).toLocaleTimeString('en-US', {

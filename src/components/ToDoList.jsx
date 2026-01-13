@@ -27,7 +27,6 @@ export default function TodoList() {
     "Dont Be Aggressive",
     "No Smoking",
     "Self Respect",
-
   ];
 
   useEffect(() => {

@@ -13,9 +13,9 @@ export default function QuoteTabs() {
       color: 'from-blue-300 to-sky-400',
       bgColor: 'bg-blue-50',
       textColor: 'text-blue-600',
-      quote: 'തോൽക്കുന്നതിനേക്കാൾ നല്ലത് ചത്ത് തോലയുന്നതാ !..',
+      quote: 'തോൽക്കുന്നതിനേക്കാൾ നല്ലത് ചത്ത് തോലയുന്നതാ !.. ഇനി നീ സിഗരറ്റ് വലിച്ചാൽ പോയി ചത്ത് തോലയ് , ',
  
-      description: 'There are only two kinds of people in the world — those who get exploited and those who are exploiters.',
+      description: 'There is no more chances for you so do or die.',
       image: 'https://tse2.mm.bing.net/th/id/OIP.scUlGVp2udvDg17EvutY2gHaEK?pid=Api&P=0&h=180'
     },
     {
