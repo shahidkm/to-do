@@ -3,6 +3,7 @@ import { Trophy, TrendingUp, Calendar, Award, Target, CheckCircle, XCircle, BarC
 import { createClient } from '@supabase/supabase-js';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Navbar from './NavBar';
+
 const supabaseUrl = 'https://quufeiwzsgiuwkeyjjns.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1dWZlaXd6c2dpdXdrZXlqam5zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4ODQ5OTYsImV4cCI6MjA4MzQ2MDk5Nn0.KL0XNEg4o4RVMJOfAQdWQekug_sw2I0KNTLkj_73_sg';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -19,15 +20,196 @@ export default function PerformanceDashboard() {
   const [todos, setTodos] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [performanceHistory, setPerformanceHistory] = useState([]);
+  const [weeklyScores, setWeeklyScores] = useState([]);
 
   useEffect(() => {
     loadDashboardData();
     loadPerformanceHistory();
+    loadWeeklyScores();
   }, []);
 
   useEffect(() => {
     loadTodosByDate(selectedDate);
   }, [selectedDate]);
+
+  const calculateWeeklyPoints = async () => {
+    try {
+      // Get the first task ever created
+      const { data: firstTask, error: firstTaskError } = await supabase
+        .from('ToDo')
+        .select('created_at')
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .single();
+
+      if (firstTaskError || !firstTask) {
+        alert('No tasks found to calculate from');
+        return;
+      }
+
+      const firstTaskDate = new Date(firstTask.created_at);
+      const today = new Date();
+      
+      // Calculate days since first task
+      const daysSinceStart = Math.floor((today - firstTaskDate) / (1000 * 60 * 60 * 24));
+      
+      // Calculate which week we're in (starting from first task)
+      const currentWeekNumber = Math.floor(daysSinceStart / 7);
+      
+      // Calculate week start and end based on first task date
+      const weekStart = new Date(firstTaskDate);
+      weekStart.setDate(firstTaskDate.getDate() + (currentWeekNumber * 7));
+      weekStart.setHours(0, 0, 0, 0);
+      
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      weekEnd.setHours(23, 59, 59, 999);
+
+      // Get all todos for this week
+      const { data: todos, error: todosError } = await supabase
+        .from('ToDo')
+        .select('*')
+        .gte('created_at', weekStart.toISOString())
+        .lte('created_at', weekEnd.toISOString());
+
+      if (todosError) throw todosError;
+
+      const totalTasks = todos.length;
+      const completedTasks = todos.filter(t => t.completed && t.active).length;
+      const failedTasks = todos.filter(t => !t.completed && t.active).length;
+
+      // Calculate score based on completion rate (0-10)
+      const completionRate = totalTasks > 0 ? (completedTasks / totalTasks) : 0;
+      const weekScore = Math.round(completionRate * 10);
+
+      const { data: existing } = await supabase
+        .from('weekly_points')
+        .select('*')
+        .eq('week_start', weekStart.toISOString().split('T')[0])
+        .maybeSingle();
+
+      let result;
+      if (existing) {
+        const { data } = await supabase
+          .from('weekly_points')
+          .update({
+            total_points: weekScore,
+            week_end: weekEnd.toISOString().split('T')[0]
+          })
+          .eq('week_start', weekStart.toISOString().split('T')[0])
+          .select()
+          .single();
+        result = data;
+      } else {
+        const { data } = await supabase
+          .from('weekly_points')
+          .insert({
+            week_start: weekStart.toISOString().split('T')[0],
+            week_end: weekEnd.toISOString().split('T')[0],
+            total_points: weekScore
+          })
+          .select()
+          .single();
+        result = data;
+      }
+
+      setWeeklyPoints(result);
+      alert(`Weekly points calculated!\nScore: ${weekScore}/10\nCompleted: ${completedTasks}/${totalTasks} tasks (${(completionRate * 100).toFixed(0)}%)`);
+    } catch (error) {
+      console.error("Error calculating weekly points:", error);
+      alert('Failed to calculate weekly points: ' + error.message);
+    }
+  };
+
+  const calculateMonthlyPoints = async () => {
+    try {
+      // Get the first task ever created
+      const { data: firstTask, error: firstTaskError } = await supabase
+        .from('ToDo')
+        .select('created_at')
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .single();
+
+      if (firstTaskError || !firstTask) {
+        alert('No tasks found to calculate from');
+        return;
+      }
+
+      const firstTaskDate = new Date(firstTask.created_at);
+      const today = new Date();
+      
+      // Calculate days since first task
+      const daysSinceStart = Math.floor((today - firstTaskDate) / (1000 * 60 * 60 * 24));
+      
+      // Calculate which month we're in (30-day periods from first task)
+      const currentMonthNumber = Math.floor(daysSinceStart / 30);
+      
+      // Calculate month start and end based on first task date
+      const monthStart = new Date(firstTaskDate);
+      monthStart.setDate(firstTaskDate.getDate() + (currentMonthNumber * 30));
+      monthStart.setHours(0, 0, 0, 0);
+      
+      const monthEnd = new Date(monthStart);
+      monthEnd.setDate(monthStart.getDate() + 29);
+      monthEnd.setHours(23, 59, 59, 999);
+
+      // Get all todos for this month period
+      const { data: todos, error: todosError } = await supabase
+        .from('ToDo')
+        .select('*')
+        .gte('created_at', monthStart.toISOString())
+        .lte('created_at', monthEnd.toISOString());
+
+      if (todosError) throw todosError;
+
+      const totalTasks = todos.length;
+      const completedTasks = todos.filter(t => t.completed && t.active).length;
+      const failedTasks = todos.filter(t => !t.completed && t.active).length;
+
+      // Calculate score based on completion rate (0-10)
+      const completionRate = totalTasks > 0 ? (completedTasks / totalTasks) : 0;
+      const monthScore = Math.round(completionRate * 10);
+
+      const { data: existing } = await supabase
+        .from('monthly_points')
+        .select('*')
+        .eq('month', currentMonthNumber + 1)
+        .eq('year', firstTaskDate.getFullYear())
+        .maybeSingle();
+
+      let result;
+      if (existing) {
+        const { data } = await supabase
+          .from('monthly_points')
+          .update({
+            total_points: monthScore
+          })
+          .eq('month', currentMonthNumber + 1)
+          .eq('year', firstTaskDate.getFullYear())
+          .select()
+          .single();
+        result = data;
+      } else {
+        const { data } = await supabase
+          .from('monthly_points')
+          .insert({
+            month: currentMonthNumber + 1,
+            year: firstTaskDate.getFullYear(),
+            total_points: monthScore
+          })
+          .select()
+          .single();
+        result = data;
+      }
+
+      setMonthlyPoints(result);
+      alert(`Monthly points calculated!\nScore: ${monthScore}/10\nCompleted: ${completedTasks}/${totalTasks} tasks (${(completionRate * 100).toFixed(0)}%)`);
+    } catch (error) {
+      console.error("Error calculating monthly points:", error);
+      alert('Failed to calculate monthly points: ' + error.message);
+    }
+  };
 
   const loadDashboardData = async () => {
     setLoading(true);
@@ -119,6 +301,50 @@ export default function PerformanceDashboard() {
     }
   };
 
+  const loadWeeklyScores = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('daily_points')
+        .select('day, points')
+        .order('day', { ascending: false })
+        .limit(90);
+      
+      if (error) throw error;
+      
+      const weekMap = new Map();
+      
+      (data || []).forEach(item => {
+        const date = new Date(item.day);
+        const weekStart = new Date(date);
+        weekStart.setDate(date.getDate() - date.getDay());
+        const weekKey = weekStart.toISOString().split('T')[0];
+        
+        if (!weekMap.has(weekKey)) {
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekStart.getDate() + 6);
+          weekMap.set(weekKey, {
+            weekStart: weekStart,
+            weekEnd: weekEnd,
+            totalScore: 0,
+            days: 0
+          });
+        }
+        
+        const week = weekMap.get(weekKey);
+        week.totalScore += item.points;
+        week.days += 1;
+      });
+      
+      const weeklyData = Array.from(weekMap.values())
+        .sort((a, b) => b.weekStart - a.weekStart)
+        .slice(0, 8);
+      
+      setWeeklyScores(weeklyData);
+    } catch (error) {
+      console.error("Error loading weekly scores:", error);
+    }
+  };
+
   const updateDailyPoints = async () => {
     const points = parseInt(pointsInput);
     if (isNaN(points) || points < 0 || points > 10) {
@@ -167,6 +393,7 @@ export default function PerformanceDashboard() {
       setDailyPoints(result);
       setPointsInput('');
       setReasonInput('');
+      loadWeeklyScores();
       alert('Daily points updated successfully!');
     } catch (error) {
       console.error("Error updating points:", error);
@@ -297,11 +524,22 @@ export default function PerformanceDashboard() {
       setDailyPerformance(perfResult);
       setDailyPoints(pointsResult);
       loadPerformanceHistory();
+      loadWeeklyScores();
       alert('Daily summary recalculated successfully!');
     } catch (error) {
       console.error("Error calculating summary:", error);
       alert('Failed to calculate summary: ' + error.message);
     }
+  };
+
+  const getPerformanceNotification = (score) => {
+    if (score >= 9) return { icon: '🔥', text: 'Outstanding! You\'re crushing it!', color: 'emerald' };
+    if (score >= 8) return { icon: '⭐', text: 'Excellent work! Keep it up!', color: 'sky' };
+    if (score >= 7) return { icon: '👍', text: 'Good job! Solid performance!', color: 'blue' };
+    if (score >= 6) return { icon: '📈', text: 'Nice progress! Almost there!', color: 'cyan' };
+    if (score >= 5) return { icon: '💪', text: 'Keep pushing! You can do better!', color: 'amber' };
+    if (score >= 4) return { icon: '⚡', text: 'Time to step up your game!', color: 'orange' };
+    return { icon: '🎯', text: 'Focus needed! Let\'s improve!', color: 'rose' };
   };
 
   const getPerformanceColor = (status) => {
@@ -454,18 +692,67 @@ export default function PerformanceDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div className="bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/50 border border-slate-100 hover:shadow-2xl hover:shadow-sky-200/30 transition-all duration-300">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-slate-800">Weekly Points</h3>
+                <div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-1">This Week's Points</h3>
+                  <p className="text-xs text-slate-500">Sum of all daily points this week</p>
+                </div>
                 <div className="p-3 bg-sky-50 rounded-xl">
                   <Award className="text-sky-500" size={28} strokeWidth={2.5} />
                 </div>
               </div>
               {weeklyPoints ? (
                 <div>
-                  <div className="text-6xl font-black bg-gradient-to-br from-sky-500 via-blue-500 to-cyan-600 bg-clip-text text-transparent mb-3">{weeklyPoints.total_points}</div>
-                  <p className="text-lg text-slate-600 font-semibold mb-4">Total Points</p>
-                  <div className="p-4 bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl border border-slate-100">
-                    <p className="text-sm text-slate-600 font-medium">
+                  <div className="flex items-center justify-center gap-4 mb-4">
+                    <div className="text-center">
+                      <div className="text-6xl font-black bg-gradient-to-br from-sky-500 via-blue-500 to-cyan-600 bg-clip-text text-transparent">{weeklyPoints.total_points}</div>
+                      <div className="text-sm text-slate-400 font-bold mt-1">/ 10</div>
+                    </div>
+                  </div>
+                  <p className="text-sm text-slate-600 font-medium mb-4 text-center">Based on completed vs total tasks this week</p>
+                  
+                  {(() => {
+                    const weekScore = weeklyPoints.total_points;
+                    const notification = getPerformanceNotification(weekScore);
+                    return (
+                      <div className={`mb-4 p-4 bg-gradient-to-r from-${notification.color}-50 to-${notification.color}-100 border border-${notification.color}-200 rounded-xl`}>
+                        <div className="flex items-center gap-3">
+                          <span className="text-3xl">{notification.icon}</span>
+                          <div>
+                            <div className={`text-sm font-bold text-${notification.color}-800 mb-1`}>Week Performance</div>
+                            <div className={`text-xs text-${notification.color}-700`}>{notification.text}</div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                  
+                  <div className="w-full bg-slate-200 rounded-full h-3 mb-4">
+                    <div
+                      className="h-3 rounded-full bg-gradient-to-r from-sky-400 to-blue-500 transition-all"
+                      style={{ width: `${(weeklyPoints.total_points / 10) * 100}%` }}
+                    ></div>
+                  </div>
+                  
+                  <div className="p-4 bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl border border-slate-100 mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs text-slate-500 font-medium">Week Period (7 days)</span>
+                      <span className="text-xs text-sky-600 font-bold">
+                        {((weeklyPoints.total_points / 10) * 100).toFixed(0)}% Score
+                      </span>
+                    </div>
+                    <p className="text-sm text-slate-700 font-semibold">
                       {new Date(weeklyPoints.week_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(weeklyPoints.week_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </p>
+                  </div>
+
+                  <button onClick={calculateWeeklyPoints} className="w-full mb-3 px-5 py-3 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-xl hover:from-sky-600 hover:to-blue-700 transition-all font-semibold text-sm shadow-lg shadow-sky-200">
+                    Recalculate Weekly Score
+                  </button>
+
+                  <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg">
+                    <p className="text-xs text-blue-700 flex items-start gap-2">
+                      <span className="text-blue-500 mt-0.5">💡</span>
+                      <span><strong>How it works:</strong> Week starts from your first task date. Score is based on completion rate: (completed tasks ÷ total tasks) × 10. Max score: 10/10</span>
                     </p>
                   </div>
                 </div>
@@ -474,25 +761,81 @@ export default function PerformanceDashboard() {
                   <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
                     <Award className="text-slate-300" size={32} />
                   </div>
-                  <p className="text-slate-500 font-medium">No weekly data yet</p>
+                  <p className="text-slate-500 font-medium mb-4">No weekly data yet</p>
+                  <button onClick={calculateWeeklyPoints} className="px-6 py-3 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-xl hover:from-sky-600 hover:to-blue-700 transition-all font-semibold shadow-lg shadow-sky-200">
+                    Calculate Weekly Score
+                  </button>
                 </div>
               )}
             </div>
 
             <div className="bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/50 border border-slate-100 hover:shadow-2xl hover:shadow-sky-200/30 transition-all duration-300">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-slate-800">Monthly Points</h3>
+                <div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-1">This Month's Points</h3>
+                  <p className="text-xs text-slate-500">Sum of all daily points this month</p>
+                </div>
                 <div className="p-3 bg-amber-50 rounded-xl">
                   <Trophy className="text-amber-500" size={28} strokeWidth={2.5} />
                 </div>
               </div>
               {monthlyPoints ? (
                 <div>
-                  <div className="text-6xl font-black bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 bg-clip-text text-transparent mb-3">{monthlyPoints.total_points}</div>
-                  <p className="text-lg text-slate-600 font-semibold mb-4">Total Points</p>
-                  <div className="p-4 bg-gradient-to-r from-slate-50 to-amber-50 rounded-xl border border-slate-100">
-                    <p className="text-sm text-slate-600 font-medium">
-                      {new Date(monthlyPoints.year, monthlyPoints.month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                  <div className="flex items-center justify-center gap-4 mb-4">
+                    <div className="text-center">
+                      <div className="text-6xl font-black bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 bg-clip-text text-transparent">
+                        {monthlyPoints.total_points}
+                      </div>
+                      <div className="text-sm text-slate-400 font-bold mt-1">/ 10</div>
+                    </div>
+                  </div>
+                  <p className="text-sm text-slate-600 font-medium mb-4 text-center">
+                    Based on completed vs total tasks this month
+                  </p>
+                  
+                  {(() => {
+                    const monthScore = monthlyPoints.total_points;
+                    const notification = getPerformanceNotification(monthScore);
+                    return (
+                      <div className={`mb-4 p-4 bg-gradient-to-r from-${notification.color}-50 to-${notification.color}-100 border border-${notification.color}-200 rounded-xl`}>
+                        <div className="flex items-center gap-3">
+                          <span className="text-3xl">{notification.icon}</span>
+                          <div>
+                            <div className={`text-sm font-bold text-${notification.color}-800 mb-1`}>Month Performance</div>
+                            <div className={`text-xs text-${notification.color}-700`}>{notification.text}</div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                  
+                  <div className="w-full bg-slate-200 rounded-full h-3 mb-4">
+                    <div
+                      className="h-3 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all"
+                      style={{ width: `${(monthlyPoints.total_points / 10) * 100}%` }}
+                    ></div>
+                  </div>
+                  
+                  <div className="p-4 bg-gradient-to-r from-slate-50 to-amber-50 rounded-xl border border-slate-100 mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs text-slate-500 font-medium">Month Period (30 days)</span>
+                      <span className="text-xs text-amber-600 font-bold">
+                        {((monthlyPoints.total_points / 10) * 100).toFixed(0)}% Score
+                      </span>
+                    </div>
+                    <p className="text-sm text-slate-700 font-semibold">
+                      Month {monthlyPoints.month}
+                    </p>
+                  </div>
+
+                  <button onClick={calculateMonthlyPoints} className="w-full mb-3 px-5 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl hover:from-amber-600 hover:to-orange-700 transition-all font-semibold text-sm shadow-lg shadow-amber-200">
+                    Recalculate Monthly Score
+                  </button>
+
+                  <div className="p-3 bg-amber-50 border border-amber-100 rounded-lg">
+                    <p className="text-xs text-amber-700 flex items-start gap-2">
+                      <span className="text-amber-500 mt-0.5">💡</span>
+                      <span><strong>How it works:</strong> Month starts from your first task date (30-day periods). Score is based on completion rate: (completed tasks ÷ total tasks) × 10. Max score: 10/10</span>
                     </p>
                   </div>
                 </div>
@@ -501,7 +844,10 @@ export default function PerformanceDashboard() {
                   <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
                     <Trophy className="text-slate-300" size={32} />
                   </div>
-                  <p className="text-slate-500 font-medium">No monthly data yet</p>
+                  <p className="text-slate-500 font-medium mb-4">No monthly data yet</p>
+                  <button onClick={calculateMonthlyPoints} className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl hover:from-amber-600 hover:to-orange-700 transition-all font-semibold shadow-lg shadow-amber-200">
+                    Calculate Monthly Score
+                  </button>
                 </div>
               )}
             </div>
@@ -594,6 +940,98 @@ export default function PerformanceDashboard() {
                 </div>
                 <p className="text-slate-300 font-medium text-lg mb-1">No performance data yet</p>
                 <p className="text-slate-500 text-sm">Complete tasks to start tracking your performance</p>
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/50 border border-slate-100 mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-2xl font-bold text-slate-800 mb-1">Weekly Performance Scores</h3>
+                <p className="text-slate-500 text-sm">Total daily points aggregated by week</p>
+              </div>
+              <div className="p-3 bg-purple-50 rounded-xl">
+                <Trophy className="text-purple-500" size={28} strokeWidth={2.5} />
+              </div>
+            </div>
+
+            {weeklyScores.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {weeklyScores.map((week, index) => {
+                  const isCurrentWeek = index === 0;
+                  const maxPossibleScore = week.days * 10;
+                  const percentage = (week.totalScore / maxPossibleScore) * 100;
+                  
+                  return (
+                    <div
+                      key={week.weekStart.toISOString()}
+                      className={`p-6 rounded-xl border-2 transition-all hover:scale-105 ${
+                        isCurrentWeek
+                          ? 'bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-300 shadow-lg shadow-purple-100'
+                          : 'bg-white border-slate-200 hover:border-purple-200 hover:shadow-md'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                          {isCurrentWeek ? 'Current Week' : `Week ${index + 1}`}
+                        </div>
+                        {isCurrentWeek && (
+                          <div className="px-2 py-1 bg-purple-500 text-white text-xs font-bold rounded-full">
+                            LIVE
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className={`text-5xl font-black mb-2 ${
+                        isCurrentWeek
+                          ? 'bg-gradient-to-br from-purple-600 to-indigo-600 bg-clip-text text-transparent'
+                          : 'text-slate-800'
+                      }`}>
+                        {week.totalScore}
+                      </div>
+                      
+                      <div className="text-sm text-slate-600 font-medium mb-3">
+                        out of {maxPossibleScore} points
+                      </div>
+                      
+                      <div className="w-full bg-slate-200 rounded-full h-2 mb-3">
+                        <div
+                          className={`h-2 rounded-full transition-all ${
+                            percentage >= 80 ? 'bg-gradient-to-r from-emerald-400 to-teal-500' :
+                            percentage >= 60 ? 'bg-gradient-to-r from-sky-400 to-blue-500' :
+                            percentage >= 40 ? 'bg-gradient-to-r from-amber-400 to-orange-500' :
+                            'bg-gradient-to-r from-rose-400 to-red-500'
+                          }`}
+                          style={{ width: `${percentage}%` }}
+                        ></div>
+                      </div>
+                      
+                      <div className="text-xs text-slate-500 font-medium mb-2">
+                        {week.weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {week.weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </div>
+                      
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-500 font-medium">{week.days} days tracked</span>
+                        <span className={`font-bold ${
+                          percentage >= 80 ? 'text-emerald-600' :
+                          percentage >= 60 ? 'text-sky-600' :
+                          percentage >= 40 ? 'text-amber-600' :
+                          'text-rose-600'
+                        }`}>
+                          {percentage.toFixed(0)}%
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-16 bg-slate-50 rounded-xl border border-slate-100">
+                <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+                  <Trophy className="text-slate-300" size={36} />
+                </div>
+                <p className="text-slate-500 font-medium text-lg mb-1">No weekly scores yet</p>
+                <p className="text-slate-400 text-sm">Start tracking daily points to see weekly performance</p>
               </div>
             )}
           </div>
