@@ -21,11 +21,14 @@ export default function TodoList() {
   const [showUrlInput, setShowUrlInput] = useState(false);
 
   const defaultTodos = [
+      "No Smoking",
     "Be Metured",
     "Think 3 Times Before Talking and Doing Anything",
     "Dont Talk About Myself And Be A Good Listner",
     "Dont Be Aggressive",
-    "No Smoking",
+  "Dont Be Selfish",
+  "Dont Be Toxic",
+  "Build A Good Charecter",
     "Self Respect",
   ];
 
