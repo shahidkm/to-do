@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Check, Trash2, Edit2, Plus, X, RefreshCw, Camera, Clock } from 'lucide-react';
+import { Check, Trash2, Edit2, Plus, X, RefreshCw, Camera, Clock, Sparkles, TrendingUp } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import Navbar from './NavBar';
 import TodaysQuotes from './TodaysQuotes';
@@ -19,6 +19,7 @@ export default function TodoList() {
   const [lastRegenerate, setLastRegenerate] = useState(localStorage.getItem('lastRegenerate') || null);
   const [imageUrl, setImageUrl] = useState('');
   const [showUrlInput, setShowUrlInput] = useState(false);
+  const [addingTodo, setAddingTodo] = useState(false);
 
   const defaultTodos = [
     "No Smoking",
@@ -49,23 +50,26 @@ export default function TodoList() {
 
     let hours = currentTime.getHours();
     const minutes = currentTime.getMinutes().toString().padStart(2, '0');
+    const seconds = currentTime.getSeconds().toString().padStart(2, '0');
     const ampm = hours >= 12 ? 'PM' : 'AM';
     hours = hours % 12 || 12;
 
     return {
       dayStr: day,
       dateStr: `${date} ${month}`,
-      timeStr: `${hours}:${minutes} ${ampm}`
+      timeStr: `${hours}:${minutes}`,
+      secondsStr: seconds,
+      ampm
     };
   };
 
-  const { dayStr, dateStr, timeStr } = formatDateTime();
+  const { dayStr, dateStr, timeStr, secondsStr, ampm } = formatDateTime();
 
   const loadTodos = async () => {
     setLoading(true);
 
     try {
-      const todayStr = new Date().toISOString().split('T')[0]; // e.g., '2026-01-10'
+      const todayStr = new Date().toISOString().split('T')[0];
 
       const { data, error } = await supabase
         .from('ToDo')
@@ -89,8 +93,7 @@ export default function TodoList() {
     const trimmedTodo = newTodo.trim();
     if (!trimmedTodo) return;
 
-    // Check if todo with same title already exists today
-    const todayStr = new Date().toISOString().split('T')[0]; // e.g., '2026-01-10'
+    const todayStr = new Date().toISOString().split('T')[0];
     const duplicate = todos.some(
       t => t.title === trimmedTodo && t.active && t.created_at.startsWith(todayStr)
     );
@@ -99,6 +102,8 @@ export default function TodoList() {
       alert("This task already exists today!");
       return;
     }
+
+    setAddingTodo(true);
 
     try {
       const { data, error } = await supabase
@@ -122,8 +127,9 @@ export default function TodoList() {
       console.error("Error adding todo:", error);
       alert("Failed to add todo. Please try again.");
     }
-  };
 
+    setTimeout(() => setAddingTodo(false), 300);
+  };
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') handleAddTodo();
@@ -230,9 +236,8 @@ export default function TodoList() {
 
   const handleRegenerate = async () => {
     try {
-      const todayStr = new Date().toISOString().split('T')[0]; // e.g., '2026-01-10'
+      const todayStr = new Date().toISOString().split('T')[0];
 
-      // Fetch existing active todos for today
       const { data: existingTodos, error: fetchError } = await supabase
         .from('ToDo')
         .select('title')
@@ -244,7 +249,6 @@ export default function TodoList() {
 
       const existingTitles = existingTodos.map(t => t.title);
 
-      // Filter defaultTodos to only add missing ones
       const newTodosData = defaultTodos
         .filter(title => !existingTitles.includes(title))
         .map(title => ({
@@ -258,7 +262,6 @@ export default function TodoList() {
         return;
       }
 
-      // Insert new todos
       const { data: insertedData, error: insertError } = await supabase
         .from('ToDo')
         .insert(newTodosData)
@@ -266,7 +269,6 @@ export default function TodoList() {
 
       if (insertError) throw insertError;
 
-      // Add newly inserted todos to state without removing existing ones
       setTodos(prev => [...insertedData, ...prev]);
     } catch (error) {
       console.error('Error regenerating todos:', error);
@@ -274,343 +276,393 @@ export default function TodoList() {
     }
   };
 
-
-
   const completedCount = todos.filter(t => t.completed).length;
   const canRegenerate = lastRegenerate !== new Date().toDateString();
+  const completionPercentage = todos.length > 0 ? Math.round((completedCount / todos.length) * 100) : 0;
 
   return (
     <div>
       <Navbar />
 
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+        }
+        
+        @keyframes pulse-glow {
+          0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
+          50% { box-shadow: 0 0 40px rgba(59, 130, 246, 0.6); }
+        }
+        
+        @keyframes slide-in {
+          from { 
+            opacity: 0; 
+            transform: translateY(20px);
+          }
+          to { 
+            opacity: 1; 
+            transform: translateY(0);
+          }
+        }
+        
+        @keyframes shimmer {
+          0% { background-position: -1000px 0; }
+          100% { background-position: 1000px 0; }
+        }
+        
+        @keyframes rotate-gradient {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        
+        @keyframes check-scale {
+          0% { transform: scale(0) rotate(-45deg); }
+          50% { transform: scale(1.2) rotate(-45deg); }
+          100% { transform: scale(1) rotate(-45deg); }
+        }
+        
+        .float-animation {
+          animation: float 3s ease-in-out infinite;
+        }
+        
+        .pulse-glow {
+          animation: pulse-glow 2s ease-in-out infinite;
+        }
+        
+        .slide-in {
+          animation: slide-in 0.3s ease-out forwards;
+        }
+        
+        .gradient-animate {
+          background-size: 200% 200%;
+          animation: rotate-gradient 3s ease infinite;
+        }
+        
+        .shimmer-bg {
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+          background-size: 1000px 100%;
+          animation: shimmer 2s infinite;
+        }
+        
+        .glass-card {
+          background: rgba(255, 255, 255, 0.7);
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .progress-ring {
+          transition: stroke-dashoffset 0.5s ease;
+        }
+      `}</style>
 
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-sky-50 to-blue-100 py-12 px-4">
-        <div className="max-w-md mx-auto mb-12">
+      <div className="min-h-screen bg-gradient-to-br from-blue-100 via-sky-50 to-indigo-100 py-8 px-4">
+        <div className="max-w-md mx-auto">
 
-          {/* Profile Image Section */}
-          <div
-            className="bg-white rounded-3xl p-8 mb-8 text-center relative overflow-hidden"
-            style={{
-              boxShadow: '0 25px 50px rgba(59, 130, 246, 0.15), 0 10px 30px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9)'
-            }}
-          >
-            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-400 via-sky-400 to-blue-500 rounded-t-3xl"></div>
-
-            {profileImage ? (
-              <div className="relative inline-block">
-                <div
-                  className="w-48 h-48 mx-auto mb-4 relative overflow-hidden rounded-3xl"
-                  style={{
-                    transform: 'perspective(1000px) rotateX(5deg)',
-                    transformStyle: 'preserve-3d',
-                    boxShadow: '0 20px 50px rgba(59, 130, 246, 0.25), 0 10px 25px rgba(0, 0, 0, 0.1)'
-                  }}
-                >
-                  <img
-                    src={profileImage}
-                    alt="Profile"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23e0e7ff" width="200" height="200"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-size="16"%3EImage Error%3C/text%3E%3C/svg%3E';
-                    }}
-                  />
-                </div>
-                <button
-                  onClick={handleRemoveImage}
-                  className="absolute -top-2 -right-2 w-10 h-10 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-all transform hover:scale-110"
-                  style={{
-                    boxShadow: '0 8px 20px rgba(239, 68, 68, 0.35)'
-                  }}
-                >
-                  <X size={20} />
-                </button>
-              </div>
-            ) : (
-              <div
-                className="w-48 h-48 mx-auto mb-4 relative"
-                style={{
-                  transform: 'perspective(1000px) rotateX(5deg)',
-                  transformStyle: 'preserve-3d'
-                }}
-              >
-                <div
-                  className="w-full h-full rounded-3xl border-4 border-dashed border-blue-200 flex items-center justify-center bg-gradient-to-br from-white to-blue-50"
-                  style={{
-                    boxShadow: '0 15px 40px rgba(59, 130, 246, 0.15), 0 8px 20px rgba(0, 0, 0, 0.08)'
-                  }}
-                >
-                  <Camera className="text-blue-300" size={64} strokeWidth={1.5} />
-                </div>
-              </div>
-            )}
-
-            <div className="flex flex-col gap-3 mt-4">
-              <label className="cursor-pointer">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-                <div
-                  className="px-6 py-3 bg-gradient-to-br from-blue-400 to-sky-500 text-white rounded-2xl hover:from-blue-500 hover:to-sky-600 transition-all transform hover:scale-105 inline-block"
-                  style={{
-                    boxShadow: '0 8px 20px rgba(59, 130, 246, 0.3)'
-                  }}
-                >
-                  <span className="text-sm font-medium">Upload Image</span>
-                </div>
-              </label>
-
-              {!showUrlInput ? (
-                <button
-                  onClick={() => setShowUrlInput(true)}
-                  className="px-6 py-3 bg-white border-2 border-blue-300 text-blue-500 rounded-2xl hover:bg-blue-50 transition-all transform hover:scale-105"
-                  style={{
-                    boxShadow: '0 8px 20px rgba(59, 130, 246, 0.15)'
-                  }}
-                >
-                  <span className="text-sm font-medium">Use Image URL</span>
-                </button>
-              ) : (
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleUrlSubmit()}
-                    placeholder="Enter image URL..."
-                    className="flex-1 px-4 py-3 border-2 border-blue-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:border-blue-400"
-                    style={{
-                      boxShadow: '0 4px 12px rgba(59, 130, 246, 0.1)'
-                    }}
-                  />
+          {/* Profile Image Section with Modern Design */}
+          <div className="glass-card rounded-3xl p-6 mb-6 relative overflow-hidden slide-in">
+            {/* Animated Background Gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-400/10 via-sky-300/10 to-indigo-400/10 gradient-animate opacity-50"></div>
+            
+            <div className="relative z-10">
+              {profileImage ? (
+                <div className="relative inline-block w-full">
+                  <div className="w-40 h-40 mx-auto mb-4 relative group">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full blur-xl opacity-50 group-hover:opacity-75 transition-opacity"></div>
+                    <img
+                      src={profileImage}
+                      alt="Profile"
+                      className="relative w-full h-full object-cover rounded-full border-4 border-white shadow-2xl transform transition-transform group-hover:scale-105"
+                      onError={(e) => {
+                        e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23e0e7ff" width="200" height="200"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-size="16"%3EImage Error%3C/text%3E%3C/svg%3E';
+                      }}
+                    />
+                  </div>
                   <button
-                    onClick={handleUrlSubmit}
-                    className="px-5 py-3 bg-gradient-to-br from-blue-400 to-sky-500 text-white rounded-xl hover:from-blue-500 hover:to-sky-600 transition-all"
-                    style={{
-                      boxShadow: '0 8px 20px rgba(59, 130, 246, 0.3)'
-                    }}
-                  >
-                    <Check size={20} />
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowUrlInput(false);
-                      setImageUrl('');
-                    }}
-                    className="px-5 py-3 bg-gray-100 text-gray-500 rounded-xl hover:bg-gray-200 transition-all"
+                    onClick={handleRemoveImage}
+                    className="absolute top-0 right-1/2 translate-x-20 -translate-y-2 w-10 h-10 bg-gradient-to-br from-red-400 to-red-600 text-white rounded-full flex items-center justify-center hover:from-red-500 hover:to-red-700 transition-all transform hover:scale-110 shadow-lg"
                   >
                     <X size={20} />
                   </button>
                 </div>
+              ) : (
+                <div className="w-40 h-40 mx-auto mb-4 float-animation">
+                  <div className="w-full h-full rounded-full border-4 border-dashed border-blue-300 flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50">
+                    <Camera className="text-blue-400" size={48} strokeWidth={1.5} />
+                  </div>
+                </div>
               )}
-            </div>
-          </div>
 
-          {/* Clock Widget with 3D Effect */}
-          <div
-            className="bg-white rounded-3xl p-8 mb-8 text-center relative overflow-hidden"
-            style={{
-              boxShadow: '0 25px 50px rgba(59, 130, 246, 0.15), 0 10px 30px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9)'
-            }}
-          >
-            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-400 via-sky-400 to-blue-500 rounded-t-3xl"></div>
+              <div className="flex flex-col gap-2 mt-4">
+                <label className="cursor-pointer group">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                  <div className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all transform group-hover:scale-105 text-center shadow-lg">
+                    <span className="text-sm font-semibold">Upload Image</span>
+                  </div>
+                </label>
 
-            <div
-              className="w-40 h-40 mx-auto mb-5 relative"
-              style={{
-                transform: 'perspective(1000px) rotateX(5deg)',
-                transformStyle: 'preserve-3d'
-              }}
-            >
-              <div
-                className="w-full h-full rounded-full border-[12px] border-blue-50 flex items-center justify-center bg-gradient-to-br from-white to-blue-50"
-                style={{
-                  boxShadow: '0 15px 40px rgba(59, 130, 246, 0.2), 0 8px 20px rgba(0, 0, 0, 0.08), inset 0 5px 15px rgba(255, 255, 255, 0.5)'
-                }}
-              >
-                <Clock className="text-blue-400" size={56} strokeWidth={2} />
+                {!showUrlInput ? (
+                  <button
+                    onClick={() => setShowUrlInput(true)}
+                    className="px-6 py-3 bg-white/80 border-2 border-blue-200 text-blue-600 rounded-xl hover:bg-white transition-all transform hover:scale-105 shadow-md"
+                  >
+                    <span className="text-sm font-semibold">Use Image URL</span>
+                  </button>
+                ) : (
+                  <div className="flex gap-2 slide-in">
+                    <input
+                      type="text"
+                      value={imageUrl}
+                      onChange={(e) => setImageUrl(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleUrlSubmit()}
+                      placeholder="Enter image URL..."
+                      className="flex-1 px-4 py-3 border-2 border-blue-200 rounded-xl text-sm focus:outline-none focus:border-blue-400 bg-white/80"
+                    />
+                    <button
+                      onClick={handleUrlSubmit}
+                      className="px-4 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all"
+                    >
+                      <Check size={20} />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowUrlInput(false);
+                        setImageUrl('');
+                      }}
+                      className="px-4 py-3 bg-gray-100 text-gray-500 rounded-xl hover:bg-gray-200 transition-all"
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
-
-            <div className="text-sm text-gray-500 font-medium mb-2">{dayStr}</div>
-            <div className="text-4xl font-bold text-gray-800 mb-3" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-              {timeStr}
-            </div>
-            <div className="text-sm text-gray-400">{dateStr}</div>
           </div>
+
+          {/* Modern Clock Widget */}
+          <div className="glass-card rounded-3xl p-6 mb-6 relative overflow-hidden slide-in">
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-400/10 via-blue-300/10 to-sky-400/10 gradient-animate opacity-50"></div>
+            
+            <div className="relative z-10 text-center">
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <Clock className="text-blue-500" size={24} />
+                <span className="text-sm font-semibold text-gray-600 uppercase tracking-wider">{dayStr}</span>
+              </div>
+              
+              <div className="flex items-baseline justify-center gap-3 mb-2">
+                <span className="text-6xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  {timeStr}
+                </span>
+                <div className="flex flex-col items-start">
+                  <span className="text-xl font-medium text-blue-500">{ampm}</span>
+                  <span className="text-sm text-gray-400 font-mono">{secondsStr}</span>
+                </div>
+              </div>
+              
+              <div className="inline-block px-4 py-1.5 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-full">
+                <span className="text-sm font-medium text-gray-600">{dateStr}</span>
+              </div>
+            </div>
+          </div>
+
           <TodaysQuotes />
-          {/* Tasks List Header */}
-          <div className="flex items-center justify-between mb-5 px-2">
-            <h3 className="text-2xl font-bold text-gray-800" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-              Tasks List
-            </h3>
+
+          {/* Progress Ring */}
+          {todos.length > 0 && (
+            <div className="glass-card rounded-3xl p-6 mb-6 slide-in">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-1">Progress</h3>
+                  <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                    {completionPercentage}%
+                  </p>
+                </div>
+                <div className="relative w-24 h-24">
+                  <svg className="transform -rotate-90 w-24 h-24">
+                    <circle
+                      cx="48"
+                      cy="48"
+                      r="40"
+                      stroke="currentColor"
+                      strokeWidth="8"
+                      fill="none"
+                      className="text-blue-100"
+                    />
+                    <circle
+                      cx="48"
+                      cy="48"
+                      r="40"
+                      stroke="url(#gradient)"
+                      strokeWidth="8"
+                      fill="none"
+                      strokeDasharray={`${2 * Math.PI * 40}`}
+                      strokeDashoffset={`${2 * Math.PI * 40 * (1 - completionPercentage / 100)}`}
+                      className="progress-ring"
+                      strokeLinecap="round"
+                    />
+                    <defs>
+                      <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#3B82F6" />
+                        <stop offset="100%" stopColor="#6366F1" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <TrendingUp className="text-blue-500" size={28} />
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="text-center p-3 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl">
+                  <p className="text-2xl font-bold text-blue-600">{todos.length}</p>
+                  <p className="text-xs text-gray-500 mt-1">Total</p>
+                </div>
+                <div className="text-center p-3 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl">
+                  <p className="text-2xl font-bold text-green-600">{completedCount}</p>
+                  <p className="text-xs text-gray-500 mt-1">Done</p>
+                </div>
+                <div className="text-center p-3 bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl">
+                  <p className="text-2xl font-bold text-orange-600">{todos.length - completedCount}</p>
+                  <p className="text-xs text-gray-500 mt-1">Pending</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tasks Header */}
+          <div className="flex items-center justify-between mb-4 px-2">
+            <div className="flex items-center gap-2">
+              <Sparkles className="text-blue-500" size={24} />
+              <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                Today's Tasks
+              </h3>
+            </div>
             <button
               onClick={handleRegenerate}
               disabled={!canRegenerate}
-              className={`p-3 rounded-2xl transition-all transform hover:scale-105 ${canRegenerate
-                ? 'bg-gradient-to-br from-blue-400 to-sky-500 text-white hover:from-blue-500 hover:to-sky-600'
-                : 'bg-gray-100 text-gray-300 cursor-not-allowed'
-                }`}
-              style={{
-                boxShadow: canRegenerate
-                  ? '0 8px 20px rgba(59, 130, 246, 0.3), 0 4px 10px rgba(0, 0, 0, 0.1)'
-                  : 'none'
-              }}
+              className={`p-3 rounded-xl transition-all transform hover:scale-110 ${
+                canRegenerate
+                  ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 shadow-lg pulse-glow'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              }`}
             >
-              <RefreshCw size={20} />
+              <RefreshCw size={20} className={canRegenerate ? 'animate-spin-slow' : ''} />
             </button>
           </div>
 
-          {/* Add Todo Input with 3D Effect */}
-          <div className="mb-6">
-            <div
-              className="relative bg-white rounded-2xl"
-              style={{
-                boxShadow: '0 10px 30px rgba(59, 130, 246, 0.12), 0 5px 15px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9)'
-              }}
-            >
+          {/* Add Todo Input */}
+          <div className="mb-6 slide-in">
+            <div className="relative glass-card rounded-2xl overflow-hidden">
               <input
                 type="text"
                 value={newTodo}
                 onChange={(e) => setNewTodo(e.target.value)}
                 onKeyDown={handleKeyPress}
-                placeholder="Add new task..."
-                className="w-full px-6 py-5 pr-16 rounded-2xl border-2 border-transparent focus:border-blue-300 focus:outline-none text-gray-700 placeholder-gray-400 bg-transparent"
+                placeholder="Add a new task..."
+                className="w-full px-6 py-5 pr-16 bg-transparent border-2 border-transparent focus:border-blue-300 focus:outline-none text-gray-700 placeholder-gray-400 transition-all"
               />
               <button
                 onClick={handleAddTodo}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-12 h-12 bg-gradient-to-br from-blue-400 to-sky-500 text-white rounded-xl flex items-center justify-center hover:from-blue-500 hover:to-sky-600 transition-all transform hover:scale-105"
-                style={{
-                  boxShadow: '0 8px 20px rgba(59, 130, 246, 0.35), 0 4px 10px rgba(0, 0, 0, 0.1)'
-                }}
+                disabled={addingTodo}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-xl flex items-center justify-center hover:from-blue-600 hover:to-indigo-700 transition-all transform hover:scale-110 shadow-lg disabled:opacity-50"
               >
-                <Plus size={24} strokeWidth={2.5} />
+                <Plus size={24} strokeWidth={2.5} className={addingTodo ? 'animate-spin' : ''} />
               </button>
             </div>
           </div>
 
-          {/* Tasks List with Enhanced 3D */}
-          <div
-            className="bg-white rounded-3xl p-6"
-            style={{
-              boxShadow: '0 25px 50px rgba(59, 130, 246, 0.15), 0 10px 30px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9)'
-            }}
-          >
-            <div className="space-y-1">
+          {/* Tasks List */}
+          <div className="glass-card rounded-3xl p-5 slide-in">
+            <div className="space-y-2">
               {loading ? (
-                <div className="text-center py-10 text-gray-400 text-sm">
-                  Loading tasks...
+                <div className="text-center py-12">
+                  <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-gray-400 text-sm">Loading tasks...</p>
                 </div>
               ) : todos.length === 0 ? (
-                <div className="text-center py-10">
+                <div className="text-center py-12">
+                  <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4 float-animation">
+                    <Sparkles className="text-blue-400" size={32} />
+                  </div>
                   <p className="text-gray-400 text-sm mb-2">No tasks yet</p>
-                  <p className="text-gray-300 text-xs">Add a task or regenerate daily todos</p>
+                  <p className="text-gray-300 text-xs">Add a task to get started</p>
                 </div>
               ) : (
                 todos.map((todo, index) => (
-                  <div key={todo.id}>
+                  <div key={todo.id} className="slide-in" style={{ animationDelay: `${index * 0.05}s` }}>
                     {editingId === todo.id ? (
-                      <div className="flex items-center gap-3 py-4 px-2">
+                      <div className="flex items-center gap-2 py-3 px-3 bg-blue-50/50 rounded-xl">
                         <input
                           value={editText}
                           onChange={(e) => setEditText(e.target.value)}
-                          className="flex-1 px-4 py-3 border-2 border-blue-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:border-blue-400"
-                          style={{
-                            boxShadow: '0 4px 12px rgba(59, 130, 246, 0.1)'
-                          }}
+                          className="flex-1 px-4 py-2.5 border-2 border-blue-300 rounded-xl text-sm focus:outline-none focus:border-blue-400 bg-white"
                           autoFocus
                         />
                         <button
                           onClick={() => handleEdit(todo.id)}
-                          className="p-2.5 hover:bg-green-50 rounded-xl text-green-500 transition-all transform hover:scale-110"
-                          style={{
-                            boxShadow: '0 4px 12px rgba(34, 197, 94, 0.15)'
-                          }}
+                          className="p-2.5 bg-green-500 hover:bg-green-600 rounded-xl text-white transition-all transform hover:scale-110 shadow-md"
                         >
-                          <Check size={20} />
+                          <Check size={18} />
                         </button>
                         <button
                           onClick={cancelEdit}
-                          className="p-2.5 hover:bg-red-50 rounded-xl text-red-400 transition-all transform hover:scale-110"
-                          style={{
-                            boxShadow: '0 4px 12px rgba(239, 68, 68, 0.15)'
-                          }}
+                          className="p-2.5 bg-red-500 hover:bg-red-600 rounded-xl text-white transition-all transform hover:scale-110 shadow-md"
                         >
-                          <X size={20} />
+                          <X size={18} />
                         </button>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-4 py-4 px-2 hover:bg-blue-50/50 rounded-xl transition-all">
+                      <div className="group flex items-center gap-3 py-3 px-3 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 rounded-xl transition-all">
                         <button
                           onClick={() => handleToggle(todo.id)}
-                          className={`flex-shrink-0 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all transform hover:scale-110 ${todo.completed
-                            ? 'bg-gradient-to-br from-blue-400 to-sky-500 border-blue-400'
-                            : 'border-gray-300 hover:border-blue-300 bg-white'
-                            }`}
-                          style={{
-                            boxShadow: todo.completed
-                              ? '0 6px 16px rgba(59, 130, 246, 0.3), 0 3px 8px rgba(0, 0, 0, 0.1)'
-                              : '0 2px 8px rgba(0, 0, 0, 0.06)'
-                          }}
-                          title={todo.completed ? "Mark as not completed" : "Mark as completed"}
+                          className={`relative flex-shrink-0 w-7 h-7 rounded-lg border-2 transition-all transform hover:scale-110 ${
+                            todo.completed
+                              ? 'bg-gradient-to-br from-blue-500 to-indigo-600 border-blue-500 shadow-lg'
+                              : 'border-gray-300 hover:border-blue-400 bg-white shadow-sm'
+                          }`}
                         >
-                          {todo.completed && <Check size={16} className="text-white" strokeWidth={3} />}
+                          {todo.completed && (
+                            <Check size={18} className="text-white absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" strokeWidth={3} />
+                          )}
                         </button>
 
-                        <span className={`flex-1 text-sm ${todo.completed
-                          ? 'line-through text-gray-400'
-                          : 'text-gray-700 font-medium'
-                          }`}>
+                        <span className={`flex-1 text-sm transition-all ${
+                          todo.completed
+                            ? 'line-through text-gray-400'
+                            : 'text-gray-700 font-medium group-hover:text-blue-600'
+                        }`}>
                           {todo.title}
                         </span>
 
-                        <button
-                          onClick={() => startEdit(todo.id, todo.title)}
-                          className="p-2 hover:bg-blue-100 rounded-xl text-blue-500 transition-all transform hover:scale-110"
-                          style={{
-                            boxShadow: '0 4px 12px rgba(59, 130, 246, 0.15)'
-                          }}
-                          title="Edit task"
-                        >
-                          <Edit2 size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(todo.id)}
-                          className="p-2 hover:bg-red-50 rounded-xl text-red-400 transition-all transform hover:scale-110"
-                          style={{
-                            boxShadow: '0 4px 12px rgba(239, 68, 68, 0.15)'
-                          }}
-                          title="Delete task"
-                        >
-                          <Trash2 size={18} />
-                        </button>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => startEdit(todo.id, todo.title)}
+                            className="p-2 bg-blue-100 hover:bg-blue-200 rounded-lg text-blue-600 transition-all transform hover:scale-110"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(todo.id)}
+                            className="p-2 bg-red-100 hover:bg-red-200 rounded-lg text-red-600 transition-all transform hover:scale-110"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </div>
                     )}
-                    {index < todos.length - 1 && <div className="border-b border-gray-100 mx-2"></div>}
                   </div>
                 ))
               )}
             </div>
-
-            {/* Task Stats with 3D Effect */}
-            {todos.length > 0 && (
-              <div
-                className="mt-6 pt-5 border-t-2 border-gray-100 flex justify-between text-xs text-gray-500 bg-gradient-to-br from-blue-50/30 to-sky-50/30 rounded-2xl p-4 -mx-2"
-                style={{
-                  boxShadow: 'inset 0 2px 8px rgba(59, 130, 246, 0.08)'
-                }}
-              >
-                <span>Total: <strong className="text-gray-700 text-sm">{todos.length}</strong></span>
-                <span>Completed: <strong className="text-blue-500 text-sm">{completedCount}</strong></span>
-                <span>Pending: <strong className="text-orange-400 text-sm">{todos.length - completedCount}</strong></span>
-              </div>
-            )}
           </div>
 
         </div>
-
       </div>
     </div>
   );
