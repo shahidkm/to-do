@@ -22,7 +22,7 @@ export default function TodoList() {
   const [addingTodo, setAddingTodo] = useState(false);
 
   const defaultTodos = [
-    "No Smoking",
+    // "No Smoking",
     "Be Metured",
     "Think 3 Times Before Talking and Doing Anything",
     "Dont Talk About Myself And Be A Good Listner",
