@@ -114,6 +114,11 @@ export default function PerformanceDashboard() {
       }
 
       setWeeklyPoints(result);
+      
+      // Refresh the graphs after calculation
+      await loadPerformanceHistory();
+      await loadWeeklyScores();
+      
       alert(`Weekly points calculated!\nScore: ${weekScore}/10\nCompleted: ${completedTasks}/${totalTasks} tasks (${(completionRate * 100).toFixed(0)}%)`);
     } catch (error) {
       console.error("Error calculating weekly points:", error);
@@ -204,6 +209,11 @@ export default function PerformanceDashboard() {
       }
 
       setMonthlyPoints(result);
+      
+      // Refresh the graphs after calculation
+      await loadPerformanceHistory();
+      await loadWeeklyScores();
+      
       alert(`Monthly points calculated!\nScore: ${monthScore}/10\nCompleted: ${completedTasks}/${totalTasks} tasks (${(completionRate * 100).toFixed(0)}%)`);
     } catch (error) {
       console.error("Error calculating monthly points:", error);
@@ -220,21 +230,21 @@ export default function PerformanceDashboard() {
         .from('daily_todo_summary')
         .select('*')
         .eq('day', today)
-        .single();
+        .maybeSingle();
       setDailySummary(summary);
 
       const { data: points } = await supabase
         .from('daily_points')
         .select('*')
         .eq('day', today)
-        .single();
+        .maybeSingle();
       setDailyPoints(points);
 
       const { data: performance } = await supabase
         .from('daily_performance')
         .select('*')
         .eq('day', today)
-        .single();
+        .maybeSingle();
       setDailyPerformance(performance);
 
       const { data: weekly } = await supabase
@@ -242,7 +252,7 @@ export default function PerformanceDashboard() {
         .select('*')
         .order('week_start', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
       setWeeklyPoints(weekly);
 
       const currentMonth = new Date().getMonth() + 1;
@@ -252,7 +262,7 @@ export default function PerformanceDashboard() {
         .select('*')
         .eq('month', currentMonth)
         .eq('year', currentYear)
-        .single();
+        .maybeSingle();
       setMonthlyPoints(monthly);
 
     } catch (error) {
@@ -281,11 +291,17 @@ export default function PerformanceDashboard() {
 
   const loadPerformanceHistory = async () => {
     try {
+      // Calculate date 30 days ago
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
+      
+      // Get LAST 30 days of data (not first 30)
       const { data, error } = await supabase
         .from('daily_performance')
         .select('day, completion_percentage, performance_status')
-        .order('day', { ascending: true })
-        .limit(30);
+        .gte('day', thirtyDaysAgoStr)
+        .order('day', { ascending: true });
       
       if (error) throw error;
       
@@ -303,20 +319,52 @@ export default function PerformanceDashboard() {
 
   const loadWeeklyScores = async () => {
     try {
+      // Calculate date 90 days ago
+      const ninetyDaysAgo = new Date();
+      ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+      const ninetyDaysAgoStr = ninetyDaysAgo.toISOString().split('T')[0];
+      
+      // Get LAST 90 days of daily points data
       const { data, error } = await supabase
         .from('daily_points')
         .select('day, points')
-        .order('day', { ascending: false })
-        .limit(90);
+        .gte('day', ninetyDaysAgoStr)
+        .order('day', { ascending: true });
       
       if (error) throw error;
+      
+      // Also get the first task to align weeks properly
+      const { data: firstTask } = await supabase
+        .from('ToDo')
+        .select('created_at')
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      
+      if (!firstTask) {
+        setWeeklyScores([]);
+        return;
+      }
+      
+      const firstTaskDate = new Date(firstTask.created_at);
+      firstTaskDate.setHours(0, 0, 0, 0);
       
       const weekMap = new Map();
       
       (data || []).forEach(item => {
-        const date = new Date(item.day);
-        const weekStart = new Date(date);
-        weekStart.setDate(date.getDate() - date.getDay());
+        const itemDate = new Date(item.day);
+        itemDate.setHours(0, 0, 0, 0);
+        
+        // Calculate days since first task
+        const daysSinceFirst = Math.floor((itemDate - firstTaskDate) / (1000 * 60 * 60 * 24));
+        
+        // Determine which week this day belongs to
+        const weekNumber = Math.floor(daysSinceFirst / 7);
+        
+        // Calculate week start based on first task date
+        const weekStart = new Date(firstTaskDate);
+        weekStart.setDate(firstTaskDate.getDate() + (weekNumber * 7));
+        
         const weekKey = weekStart.toISOString().split('T')[0];
         
         if (!weekMap.has(weekKey)) {
@@ -335,6 +383,7 @@ export default function PerformanceDashboard() {
         week.days += 1;
       });
       
+      // Sort by week start date (newest first) and take last 8 weeks
       const weeklyData = Array.from(weekMap.values())
         .sort((a, b) => b.weekStart - a.weekStart)
         .slice(0, 8);
@@ -393,7 +442,11 @@ export default function PerformanceDashboard() {
       setDailyPoints(result);
       setPointsInput('');
       setReasonInput('');
-      loadWeeklyScores();
+      
+      // Refresh graphs after updating points
+      await loadPerformanceHistory();
+      await loadWeeklyScores();
+      
       alert('Daily points updated successfully!');
     } catch (error) {
       console.error("Error updating points:", error);
@@ -523,8 +576,11 @@ export default function PerformanceDashboard() {
       setDailySummary(summaryResult);
       setDailyPerformance(perfResult);
       setDailyPoints(pointsResult);
-      loadPerformanceHistory();
-      loadWeeklyScores();
+      
+      // Refresh graphs after calculation
+      await loadPerformanceHistory();
+      await loadWeeklyScores();
+      
       alert('Daily summary recalculated successfully!');
     } catch (error) {
       console.error("Error calculating summary:", error);
