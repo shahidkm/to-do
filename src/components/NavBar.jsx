@@ -55,6 +55,13 @@ const Navbar = () => {
             >
               Inspirations
             </button>
+                    <button
+            className="block text-blue-800 hover:bg-blue-200 px-3 py-2 rounded-md w-full text-left"
+            onClick={() => handleNavigate("/previous-todos")}
+          >
+            
+            Previous
+          </button>
           </div>
 
           {/* Mobile Menu Button */}
@@ -136,6 +143,7 @@ const Navbar = () => {
             className="block text-blue-800 hover:bg-blue-200 px-3 py-2 rounded-md w-full text-left"
             onClick={() => handleNavigate("/previous-todos")}
           >
+
             Previous
           </button>
         </div>
