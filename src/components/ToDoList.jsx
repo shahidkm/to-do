@@ -22,14 +22,15 @@ export default function TodoList() {
   const [addingTodo, setAddingTodo] = useState(false);
 
   const defaultTodos = [
-    // "No Smoking",
+    "Build A Good Charecter",
+    "Do Good Things Only",
+    "No Smoking",
     "Be Metured",
     "Think 3 Times Before Talking and Doing Anything",
     "Dont Talk About Myself And Be A Good Listner",
     "Dont Be Aggressive",
     "Dont Be Selfish",
     "Dont Be Toxic",
-    "Build A Good Charecter",
     "Self Respect",
     "Get Well Dressed"
   ];
@@ -364,7 +365,7 @@ export default function TodoList() {
           <div className="glass-card rounded-3xl p-6 mb-6 relative overflow-hidden slide-in">
             {/* Animated Background Gradient */}
             <div className="absolute inset-0 bg-gradient-to-br from-blue-400/10 via-sky-300/10 to-indigo-400/10 gradient-animate opacity-50"></div>
-            
+
             <div className="relative z-10">
               {profileImage ? (
                 <div className="relative inline-block w-full">
@@ -448,13 +449,13 @@ export default function TodoList() {
           {/* Modern Clock Widget */}
           <div className="glass-card rounded-3xl p-6 mb-6 relative overflow-hidden slide-in">
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-400/10 via-blue-300/10 to-sky-400/10 gradient-animate opacity-50"></div>
-            
+
             <div className="relative z-10 text-center">
               <div className="flex items-center justify-center gap-2 mb-4">
                 <Clock className="text-blue-500" size={24} />
                 <span className="text-sm font-semibold text-gray-600 uppercase tracking-wider">{dayStr}</span>
               </div>
-              
+
               <div className="flex items-baseline justify-center gap-3 mb-2">
                 <span className="text-6xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                   {timeStr}
@@ -464,7 +465,7 @@ export default function TodoList() {
                   <span className="text-sm text-gray-400 font-mono">{secondsStr}</span>
                 </div>
               </div>
-              
+
               <div className="inline-block px-4 py-1.5 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-full">
                 <span className="text-sm font-medium text-gray-600">{dateStr}</span>
               </div>
@@ -546,11 +547,10 @@ export default function TodoList() {
             <button
               onClick={handleRegenerate}
               disabled={!canRegenerate}
-              className={`p-3 rounded-xl transition-all transform hover:scale-110 ${
-                canRegenerate
+              className={`p-3 rounded-xl transition-all transform hover:scale-110 ${canRegenerate
                   ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 shadow-lg pulse-glow'
                   : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-              }`}
+                }`}
             >
               <RefreshCw size={20} className={canRegenerate ? 'animate-spin-slow' : ''} />
             </button>
@@ -621,22 +621,20 @@ export default function TodoList() {
                       <div className="group flex items-center gap-3 py-3 px-3 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 rounded-xl transition-all">
                         <button
                           onClick={() => handleToggle(todo.id)}
-                          className={`relative flex-shrink-0 w-7 h-7 rounded-lg border-2 transition-all transform hover:scale-110 ${
-                            todo.completed
+                          className={`relative flex-shrink-0 w-7 h-7 rounded-lg border-2 transition-all transform hover:scale-110 ${todo.completed
                               ? 'bg-gradient-to-br from-blue-500 to-indigo-600 border-blue-500 shadow-lg'
                               : 'border-gray-300 hover:border-blue-400 bg-white shadow-sm'
-                          }`}
+                            }`}
                         >
                           {todo.completed && (
                             <Check size={18} className="text-white absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" strokeWidth={3} />
                           )}
                         </button>
 
-                        <span className={`flex-1 text-sm transition-all ${
-                          todo.completed
+                        <span className={`flex-1 text-sm transition-all ${todo.completed
                             ? 'line-through text-gray-400'
                             : 'text-gray-700 font-medium group-hover:text-blue-600'
-                        }`}>
+                          }`}>
                           {todo.title}
                         </span>
 
