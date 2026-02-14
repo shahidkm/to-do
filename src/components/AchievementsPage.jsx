@@ -6,13 +6,12 @@ import {
   TrendingUp,
   Calendar,
   Target,
-  ChevronDown,
-  ChevronUp,
-  Minus,
-  Check,
-  Flame,
-  Award,
+  Sparkles,
   Zap,
+  Crown,
+  Star,
+  Clock,
+  TrendingDown,
 } from "lucide-react";
 import Navbar from "./NavBar";
 
@@ -26,13 +25,11 @@ export default function AchievementsPage() {
   const [achievements, setAchievements] = useState([]);
   const [loading, setLoading] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
-  const [expandedCard, setExpandedCard] = useState(null);
 
   const [form, setForm] = useState({
     title: "",
     description: "",
     target_value: "",
-    current_value: 0,
     start_date: new Date().toISOString().split("T")[0],
     target_date: "",
   });
@@ -48,13 +45,79 @@ export default function AchievementsPage() {
       .select("*")
       .order("created_at", { ascending: false });
 
-    setAchievements(data || []);
+    const enrichedData = (data || []).map((achievement) => ({
+      ...achievement,
+      ...calculateProgress(achievement),
+    }));
+
+    setAchievements(enrichedData);
     setLoading(false);
+  }
+
+  function calculateProgress(achievement) {
+    if (!achievement.start_date || !achievement.target_date) {
+      return {
+        daysPassed: 0,
+        totalDays: 0,
+        expectedProgress: 0,
+        isOnTrack: true,
+        daysRemaining: 0,
+        autoCurrentValue: achievement.current_value,
+      };
+    }
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    
+    const start = new Date(achievement.start_date);
+    start.setHours(0, 0, 0, 0);
+    
+    const target = new Date(achievement.target_date);
+    target.setHours(0, 0, 0, 0);
+
+    const totalDays = Math.max(
+      1,
+      Math.ceil((target - start) / (1000 * 60 * 60 * 24))
+    );
+    
+    const daysPassed = Math.max(
+      0,
+      Math.min(totalDays, Math.ceil((now - start) / (1000 * 60 * 60 * 24)))
+    );
+    
+    const daysRemaining = Math.max(
+      0,
+      Math.ceil((target - now) / (1000 * 60 * 60 * 24))
+    );
+
+    const autoCurrentValue = Math.min(
+      achievement.target_value,
+      Math.floor((achievement.target_value / totalDays) * daysPassed)
+    );
+
+    const expectedProgress = autoCurrentValue;
+
+    const actualPercentage =
+      (autoCurrentValue / achievement.target_value) * 100;
+    const expectedPercentage = (expectedProgress / achievement.target_value) * 100;
+
+    return {
+      daysPassed,
+      totalDays,
+      daysRemaining,
+      expectedProgress,
+      isOnTrack: actualPercentage >= expectedPercentage - 5,
+      dailyTarget: (achievement.target_value / totalDays).toFixed(1),
+      autoCurrentValue,
+    };
   }
 
   async function createAchievement(e) {
     e.preventDefault();
-    if (!form.title.trim() || !form.target_value) return;
+    if (!form.title.trim() || !form.target_value || !form.start_date || !form.target_date) {
+      alert("Please fill in all required fields including dates");
+      return;
+    }
 
     setLoading(true);
 
@@ -62,9 +125,9 @@ export default function AchievementsPage() {
       title: form.title.trim(),
       description: form.description.trim() || null,
       target_value: Number(form.target_value),
-      current_value: Number(form.current_value) || 0,
-      start_date: form.start_date || null,
-      target_date: form.target_date || null,
+      current_value: 0,
+      start_date: form.start_date,
+      target_date: form.target_date,
     });
 
     if (error) {
@@ -77,7 +140,6 @@ export default function AchievementsPage() {
       title: "",
       description: "",
       target_value: "",
-      current_value: 0,
       start_date: new Date().toISOString().split("T")[0],
       target_date: "",
     });
@@ -87,202 +149,223 @@ export default function AchievementsPage() {
     setLoading(false);
   }
 
-  async function updateProgress(id, newValue, targetValue) {
-    const clampedValue = Math.max(0, Math.min(newValue, targetValue));
+  const getStatusBadge = (achievement) => {
+    const isCompleted = achievement.autoCurrentValue >= achievement.target_value;
+    
+    if (isCompleted) {
+      return (
+        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 text-white text-xs font-bold shadow-lg">
+          <Crown size={14} />
+          Completed
+        </div>
+      );
+    }
 
-    await supabase
-      .from("achievements")
-      .update({ current_value: clampedValue })
-      .eq("id", id);
+    if (achievement.isOnTrack) {
+      return (
+        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 text-white text-xs font-bold shadow-lg">
+          <TrendingUp size={14} />
+          On Track
+        </div>
+      );
+    }
 
-    await fetchAchievements();
-  }
-
-  const getProgressColor = (percentage) => {
-    if (percentage >= 100) return "from-emerald-500 to-green-600";
-    if (percentage >= 75) return "from-sky-500 to-blue-600";
-    if (percentage >= 50) return "from-amber-500 to-orange-600";
-    return "from-rose-500 to-pink-600";
-  };
-
-  const getProgressIcon = (percentage) => {
-    if (percentage >= 100)
-      return <Trophy className="text-emerald-500" size={24} />;
-    if (percentage >= 75) return <Award className="text-sky-500" size={24} />;
-    if (percentage >= 50) return <Flame className="text-amber-500" size={24} />;
-    return <Zap className="text-rose-500" size={24} />;
+    return (
+      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-orange-400 to-rose-500 text-white text-xs font-bold shadow-lg">
+        <TrendingDown size={14} />
+        Behind
+      </div>
+    );
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-pink-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-cyan-50 to-blue-50">
       <Navbar />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-10 gap-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-12 gap-6">
           <div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-slate-800 tracking-tight">
-              My Achievements
-            </h1>
-            <p className="mt-2 text-slate-600">
-              Track your progress and celebrate milestones
-            </p>
+            <div className="flex items-center gap-4 mb-2">
+              <div className="p-3 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl shadow-xl">
+                <Trophy className="text-white" size={36} />
+              </div>
+              <div>
+                <h1 className="text-5xl font-black text-slate-900 tracking-tight">
+                  Achievements
+                </h1>
+                <p className="text-slate-600 mt-1 text-lg">
+                  Track your goals and celebrate your wins
+                </p>
+              </div>
+            </div>
           </div>
 
           <button
             onClick={() => setFormOpen(!formOpen)}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl font-medium shadow-lg hover:shadow-xl hover:shadow-purple-300/40 transition-all active:scale-95"
+            className="group relative inline-flex items-center gap-2 px-6 py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl hover:shadow-cyan-500/30 transition-all duration-300 hover:scale-105 active:scale-95"
           >
-            <Plus size={18} />
-            New Achievement
+            <Plus size={20} />
+            <span>New Goal</span>
           </button>
         </div>
 
+        {/* Stats Overview */}
+        {achievements.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600 font-medium mb-1">Total Goals</p>
+                  <p className="text-3xl font-black text-slate-900">{achievements.length}</p>
+                </div>
+                <div className="p-3 bg-gradient-to-br from-cyan-100 to-blue-100 rounded-xl">
+                  <Target className="text-cyan-600" size={24} />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600 font-medium mb-1">Completed</p>
+                  <p className="text-3xl font-black text-emerald-600">
+                    {achievements.filter(a => a.autoCurrentValue >= a.target_value).length}
+                  </p>
+                </div>
+                <div className="p-3 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-xl">
+                  <Crown className="text-emerald-600" size={24} />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600 font-medium mb-1">In Progress</p>
+                  <p className="text-3xl font-black text-blue-600">
+                    {achievements.filter(a => a.autoCurrentValue < a.target_value).length}
+                  </p>
+                </div>
+                <div className="p-3 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl">
+                  <TrendingUp className="text-blue-600" size={24} />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Create Form */}
         {formOpen && (
-          <div className="mb-12 bg-white/70 backdrop-blur-xl rounded-2xl p-7 shadow-2xl border border-white/40">
-            <h2 className="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-3">
-              <Trophy className="text-purple-500" size={28} />
-              Create New Achievement
-            </h2>
+          <div className="mb-12 bg-white rounded-3xl p-8 shadow-xl border border-slate-200">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="p-2.5 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl">
+                <Sparkles className="text-white" size={24} />
+              </div>
+              <h2 className="text-2xl font-bold text-slate-900">
+                Create New Goal
+              </h2>
+            </div>
 
             <form onSubmit={createAchievement} className="grid gap-6 md:grid-cols-2">
               {/* Title */}
               <div className="relative">
+                <label htmlFor="title" className="block text-sm font-semibold text-slate-700 mb-2">
+                  Goal Title *
+                </label>
                 <input
                   id="title"
                   type="text"
-                  placeholder=" "
-                  className="peer w-full px-4 pt-6 pb-2 bg-white border border-slate-200 rounded-xl focus:border-purple-400 focus:ring-2 focus:ring-purple-200 outline-none transition-all"
+                  placeholder="e.g., Read 50 books this year"
+                  className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 text-slate-900 rounded-xl focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 outline-none transition-all"
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                   required
                 />
-                <label
-                  htmlFor="title"
-                  className="absolute left-4 top-4 text-slate-500 text-sm transition-all peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-focus:top-2 peer-focus:text-xs peer-focus:text-purple-600 pointer-events-none"
-                >
-                  Achievement Title *
-                </label>
               </div>
 
               {/* Target Value */}
               <div className="relative">
+                <label htmlFor="target_value" className="block text-sm font-semibold text-slate-700 mb-2">
+                  Target Value *
+                </label>
                 <input
                   id="target_value"
                   type="number"
                   min="1"
-                  placeholder=" "
-                  className="peer w-full px-4 pt-6 pb-2 bg-white border border-slate-200 rounded-xl focus:border-purple-400 focus:ring-2 focus:ring-purple-200 outline-none transition-all"
+                  placeholder="e.g., 50"
+                  className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 text-slate-900 rounded-xl focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 outline-none transition-all"
                   value={form.target_value}
                   onChange={(e) =>
                     setForm({ ...form, target_value: e.target.value })
                   }
                   required
                 />
-                <label
-                  htmlFor="target_value"
-                  className="absolute left-4 top-4 text-slate-500 text-sm transition-all peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-focus:top-2 peer-focus:text-xs peer-focus:text-purple-600 pointer-events-none"
-                >
-                  Target Value *
-                </label>
               </div>
 
               {/* Description */}
               <div className="relative md:col-span-2">
+                <label htmlFor="description" className="block text-sm font-semibold text-slate-700 mb-2">
+                  Description
+                </label>
                 <textarea
                   id="description"
-                  placeholder=" "
+                  placeholder="Add more details about your goal..."
                   rows={3}
-                  className="peer w-full px-4 pt-6 pb-2 bg-white border border-slate-200 rounded-xl focus:border-purple-400 focus:ring-2 focus:ring-purple-200 outline-none transition-all resize-none"
+                  className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 text-slate-900 rounded-xl focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 outline-none transition-all resize-none"
                   value={form.description}
                   onChange={(e) =>
                     setForm({ ...form, description: e.target.value })
                   }
                 />
-                <label
-                  htmlFor="description"
-                  className="absolute left-4 top-4 text-slate-500 text-sm transition-all peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-focus:top-2 peer-focus:text-xs peer-focus:text-purple-600 pointer-events-none"
-                >
-                  Description
-                </label>
-              </div>
-
-              {/* Current Value */}
-              <div className="relative">
-                <input
-                  id="current_value"
-                  type="number"
-                  min="0"
-                  placeholder=" "
-                  className="peer w-full px-4 pt-6 pb-2 bg-white border border-slate-200 rounded-xl focus:border-purple-400 focus:ring-2 focus:ring-purple-200 outline-none transition-all"
-                  value={form.current_value}
-                  onChange={(e) =>
-                    setForm({ ...form, current_value: e.target.value })
-                  }
-                />
-                <label
-                  htmlFor="current_value"
-                  className="absolute left-4 top-4 text-slate-500 text-sm transition-all peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-focus:top-2 peer-focus:text-xs peer-focus:text-purple-600 pointer-events-none"
-                >
-                  Starting Value
-                </label>
               </div>
 
               {/* Dates */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="relative">
-                  <input
-                    id="start_date"
-                    type="date"
-                    className="peer w-full px-4 pt-6 pb-2 bg-white border border-slate-200 rounded-xl focus:border-purple-400 focus:ring-2 focus:ring-purple-200 outline-none transition-all"
-                    value={form.start_date}
-                    onChange={(e) =>
-                      setForm({ ...form, start_date: e.target.value })
-                    }
-                  />
-                  <label
-                    htmlFor="start_date"
-                    className="absolute left-4 top-2 text-xs text-purple-600 transition-all pointer-events-none"
-                  >
-                    Start Date
-                  </label>
-                </div>
+              <div className="relative">
+                <label htmlFor="start_date" className="block text-sm font-semibold text-slate-700 mb-2">
+                  Start Date *
+                </label>
+                <input
+                  id="start_date"
+                  type="date"
+                  className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 text-slate-900 rounded-xl focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 outline-none transition-all"
+                  value={form.start_date}
+                  onChange={(e) =>
+                    setForm({ ...form, start_date: e.target.value })
+                  }
+                  required
+                />
+              </div>
 
-                <div className="relative">
-                  <input
-                    id="target_date"
-                    type="date"
-                    className="peer w-full px-4 pt-6 pb-2 bg-white border border-slate-200 rounded-xl focus:border-purple-400 focus:ring-2 focus:ring-purple-200 outline-none transition-all"
-                    value={form.target_date}
-                    onChange={(e) =>
-                      setForm({ ...form, target_date: e.target.value })
-                    }
-                  />
-                  <label
-                    htmlFor="target_date"
-                    className="absolute left-4 top-2 text-xs text-purple-600 transition-all pointer-events-none"
-                  >
-                    Target Date
-                  </label>
-                </div>
+              <div className="relative">
+                <label htmlFor="target_date" className="block text-sm font-semibold text-slate-700 mb-2">
+                  Target Date *
+                </label>
+                <input
+                  id="target_date"
+                  type="date"
+                  className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 text-slate-900 rounded-xl focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 outline-none transition-all"
+                  value={form.target_date}
+                  onChange={(e) =>
+                    setForm({ ...form, target_date: e.target.value })
+                  }
+                  required
+                />
               </div>
 
               <div className="flex gap-4 mt-4 md:col-span-2">
                 <button
                   type="submit"
-                  disabled={
-                    loading || !form.title.trim() || !form.target_value
-                  }
-                  className="flex-1 py-3.5 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl font-medium shadow-lg hover:shadow-xl hover:shadow-purple-300/40 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                  disabled={loading || !form.title.trim() || !form.target_value}
+                  className="flex-1 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl hover:shadow-cyan-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-95"
                 >
-                  {loading ? "Creating..." : "Create Achievement"}
+                  {loading ? "Creating..." : "Create Goal"}
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setFormOpen(false)}
-                  className="px-8 py-3.5 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200 transition-all"
+                  className="px-8 py-4 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-all"
                 >
                   Cancel
                 </button>
@@ -294,228 +377,189 @@ export default function AchievementsPage() {
         {/* Achievements Grid */}
         {loading ? (
           <div className="flex justify-center py-20">
-            <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-500 rounded-full animate-spin"></div>
+            <div className="relative">
+              <div className="w-16 h-16 border-4 border-cyan-200 border-t-cyan-500 rounded-full animate-spin"></div>
+            </div>
           </div>
         ) : achievements.length === 0 ? (
           <div className="text-center py-20">
-            <div className="inline-flex p-6 bg-purple-50 rounded-full mb-6">
-              <Trophy className="text-purple-400" size={48} />
+            <div className="inline-flex p-8 bg-gradient-to-br from-cyan-100 to-blue-100 rounded-full mb-6">
+              <Trophy className="text-cyan-600" size={64} />
             </div>
-            <h3 className="text-2xl font-bold text-slate-700 mb-3">
-              No achievements yet
+            <h3 className="text-3xl font-bold text-slate-900 mb-3">
+              No goals yet
             </h3>
-            <p className="text-slate-500 mb-8 max-w-md mx-auto">
-              Start tracking your progress by creating your first achievement
+            <p className="text-slate-600 mb-8 max-w-md mx-auto text-lg">
+              Create your first goal and start tracking your progress
             </p>
             <button
               onClick={() => setFormOpen(true)}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-purple-500 text-white rounded-xl font-medium shadow-lg hover:shadow-xl hover:bg-purple-600 transition-all"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl hover:shadow-cyan-500/30 transition-all hover:scale-105"
             >
-              <Plus size={18} />
-              Create First Achievement
+              <Plus size={20} />
+              Create First Goal
             </button>
           </div>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {achievements.map((achievement) => {
               const percentage =
-                (achievement.current_value / achievement.target_value) * 100;
-              const isExpanded = expandedCard === achievement.id;
+                (achievement.autoCurrentValue / achievement.target_value) * 100;
+              const isCompleted = percentage >= 100;
 
               return (
                 <div
                   key={achievement.id}
-                  className={`
-                    group relative
-                    bg-white/70 backdrop-blur-xl
-                    rounded-2xl overflow-hidden
-                    border border-white/40
-                    shadow-xl shadow-slate-200/20
-                    transition-all duration-500
-                    hover:shadow-2xl
-                    ${isExpanded ? "ring-2 ring-purple-400" : ""}
-                  `}
+                  className="group bg-white rounded-2xl overflow-hidden border-2 border-slate-200 hover:border-cyan-400 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
                 >
-                  {/* Progress Header */}
-                  <div
-                    className={`relative h-32 bg-gradient-to-r ${getProgressColor(percentage)} p-6 flex items-center justify-between text-white`}
-                  >
-                    <div className="flex-1">
-                      <div className="text-sm font-medium opacity-90 mb-1">
-                        Progress
-                      </div>
-                      <div className="text-4xl font-bold">
-                        {Math.round(percentage)}%
-                      </div>
-                    </div>
-                    <div className="bg-white/20 backdrop-blur-sm p-3 rounded-xl">
-                      {getProgressIcon(percentage)}
+                  {/* Header */}
+                  <div className="p-6 border-b border-slate-100">
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <h3 className="text-xl font-bold text-slate-900 line-clamp-2 flex-1">
+                        {achievement.title}
+                      </h3>
+                      {getStatusBadge(achievement)}
                     </div>
 
-                    {achievement.is_completed && (
-                      <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full flex items-center gap-1 text-emerald-600 text-xs font-bold">
-                        <Check size={14} />
-                        Completed
-                      </div>
+                    {achievement.description && (
+                      <p className="text-slate-600 text-sm line-clamp-2">
+                        {achievement.description}
+                      </p>
                     )}
                   </div>
 
-                  {/* Content */}
-                  <div className="p-6 space-y-4">
-                    <div>
-                      <h3 className="text-xl font-semibold text-slate-800 mb-2">
-                        {achievement.title}
-                      </h3>
-                      {achievement.description && (
-                        <p className="text-sm text-slate-600 line-clamp-2">
-                          {achievement.description}
-                        </p>
-                      )}
+                  {/* Progress Section */}
+                  <div className="p-6 space-y-5">
+                    {/* Circular Progress */}
+                    <div className="flex items-center justify-center">
+                      <div className="relative w-32 h-32">
+                        <svg className="w-full h-full transform -rotate-90">
+                          <circle
+                            cx="64"
+                            cy="64"
+                            r="56"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="10"
+                            className="text-slate-100"
+                          />
+                          <circle
+                            cx="64"
+                            cy="64"
+                            r="56"
+                            fill="none"
+                            stroke={isCompleted ? "url(#gradientComplete)" : "url(#gradientProgress)"}
+                            strokeWidth="10"
+                            strokeDasharray={`${(percentage / 100) * 351.858} 351.858`}
+                            className="transition-all duration-1000"
+                            strokeLinecap="round"
+                          />
+                          <defs>
+                            <linearGradient
+                              id="gradientComplete"
+                              x1="0%"
+                              y1="0%"
+                              x2="100%"
+                              y2="100%"
+                            >
+                              <stop offset="0%" stopColor="#10b981" />
+                              <stop offset="100%" stopColor="#14b8a6" />
+                            </linearGradient>
+                            <linearGradient
+                              id="gradientProgress"
+                              x1="0%"
+                              y1="0%"
+                              x2="100%"
+                              y2="100%"
+                            >
+                              <stop offset="0%" stopColor="#06b6d4" />
+                              <stop offset="100%" stopColor="#3b82f6" />
+                            </linearGradient>
+                          </defs>
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <div className="text-3xl font-black text-slate-900">
+                            {Math.round(percentage)}%
+                          </div>
+                          <div className="text-xs text-slate-500 font-semibold">
+                            Complete
+                          </div>
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Stats */}
-                    <div className="grid grid-cols-3 gap-3 py-3 border-y border-slate-100">
-                      <div className="text-center">
-                        <div className="text-xs text-slate-500 mb-1">
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-xl p-3 text-center border border-cyan-100">
+                        <div className="text-lg font-bold text-cyan-600">
+                          {achievement.autoCurrentValue}
+                        </div>
+                        <div className="text-xs text-slate-600 font-semibold">
                           Current
                         </div>
-                        <div className="text-lg font-bold text-slate-800">
-                          {achievement.current_value}
+                      </div>
+                      <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-3 text-center border border-orange-100">
+                        <div className="text-lg font-bold text-orange-600">
+                          {achievement.target_value - achievement.autoCurrentValue}
+                        </div>
+                        <div className="text-xs text-slate-600 font-semibold">
+                          Left
                         </div>
                       </div>
-                      <div className="text-center border-x border-slate-100">
-                        <div className="text-xs text-slate-500 mb-1">
-                          Remaining
-                        </div>
-                        <div className="text-lg font-bold text-amber-600">
-                          {achievement.remaining_value}
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-xs text-slate-500 mb-1">
-                          Target
-                        </div>
+                      <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-3 text-center border border-emerald-100">
                         <div className="text-lg font-bold text-emerald-600">
                           {achievement.target_value}
                         </div>
+                        <div className="text-xs text-slate-600 font-semibold">
+                          Target
+                        </div>
                       </div>
                     </div>
 
-                    {/* Counter Controls - Dropdown */}
-                    <div>
-                      <button
-                        onClick={() =>
-                          setExpandedCard(
-                            isExpanded ? null : achievement.id
-                          )
-                        }
-                        className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl hover:from-slate-100 hover:to-slate-200 transition-all"
-                      >
-                        <span className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                          <TrendingUp size={16} />
-                          Update Progress
-                        </span>
-                        {isExpanded ? (
-                          <ChevronUp size={18} className="text-slate-600" />
-                        ) : (
-                          <ChevronDown size={18} className="text-slate-600" />
-                        )}
-                      </button>
-
-                      {isExpanded && (
-                        <div className="mt-3 p-4 bg-slate-50 rounded-xl space-y-3 animate-in slide-in-from-top-2 duration-300">
-                          {/* Number Input */}
-                          <div className="flex items-center gap-3">
-                            <button
-                              onClick={() =>
-                                updateProgress(
-                                  achievement.id,
-                                  achievement.current_value - 1,
-                                  achievement.target_value
-                                )
-                              }
-                              disabled={achievement.current_value <= 0}
-                              className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-white rounded-lg border border-slate-200 hover:bg-rose-50 hover:border-rose-300 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                            >
-                              <Minus size={18} className="text-slate-600" />
-                            </button>
-
-                            <input
-                              type="number"
-                              value={achievement.current_value}
-                              onChange={(e) => {
-                                const val = Number(e.target.value);
-                                if (val >= 0 && val <= achievement.target_value) {
-                                  updateProgress(
-                                    achievement.id,
-                                    val,
-                                    achievement.target_value
-                                  );
-                                }
-                              }}
-                              className="flex-1 px-4 py-2 text-center text-lg font-semibold bg-white border border-slate-200 rounded-lg focus:border-purple-400 focus:ring-2 focus:ring-purple-200 outline-none"
-                            />
-
-                            <button
-                              onClick={() =>
-                                updateProgress(
-                                  achievement.id,
-                                  achievement.current_value + 1,
-                                  achievement.target_value
-                                )
-                              }
-                              disabled={
-                                achievement.current_value >=
-                                achievement.target_value
-                              }
-                              className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-white rounded-lg border border-slate-200 hover:bg-emerald-50 hover:border-emerald-300 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                            >
-                              <Plus size={18} className="text-slate-600" />
-                            </button>
-                          </div>
-
-                          {/* Quick Add Buttons */}
-                          <div className="grid grid-cols-3 gap-2">
-                            {[5, 10, 25].map((increment) => (
-                              <button
-                                key={increment}
-                                onClick={() =>
-                                  updateProgress(
-                                    achievement.id,
-                                    achievement.current_value + increment,
-                                    achievement.target_value
-                                  )
-                                }
-                                disabled={
-                                  achievement.current_value >=
-                                  achievement.target_value
-                                }
-                                className="px-3 py-2 text-xs font-medium bg-white border border-slate-200 rounded-lg hover:bg-purple-50 hover:border-purple-300 hover:text-purple-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                              >
-                                +{increment}
-                              </button>
-                            ))}
-                          </div>
+                    {/* Daily Progress Info */}
+                    {achievement.dailyTarget && (
+                      <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-4 border border-slate-200">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm text-slate-700 font-semibold">
+                            Daily Target
+                          </span>
+                          <span className="text-sm font-bold text-cyan-600">
+                            {achievement.dailyTarget} / day
+                          </span>
                         </div>
-                      )}
+                        <div className="flex items-center justify-between text-xs text-slate-500">
+                          <div className="flex items-center gap-1">
+                            <Clock size={12} />
+                            <span>{achievement.daysPassed} days in</span>
+                          </div>
+                          <span>{achievement.daysRemaining} days left</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Auto Progress Indicator */}
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200 flex items-center gap-3">
+                      <div className="p-2 bg-blue-100 rounded-lg">
+                        <Zap size={18} className="text-blue-600" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm font-bold text-slate-900">
+                          Auto-Tracking
+                        </div>
+                        <div className="text-xs text-slate-600">
+                          Updates daily
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Dates */}
-                    {(achievement.start_date || achievement.target_date) && (
-                      <div className="flex items-center gap-2 text-xs text-slate-500 pt-2">
-                        <Calendar size={14} />
+                    {/* Timeline */}
+                    {achievement.start_date && achievement.target_date && (
+                      <div className="flex items-center gap-2 text-xs text-slate-500 pt-2 border-t border-slate-100">
+                        <Calendar size={14} className="text-cyan-500" />
                         <span>
-                          {achievement.start_date
-                            ? new Date(
-                                achievement.start_date
-                              ).toLocaleDateString()
-                            : "—"}
+                          {new Date(achievement.start_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                           {" → "}
-                          {achievement.target_date
-                            ? new Date(
-                                achievement.target_date
-                              ).toLocaleDateString()
-                            : "—"}
+                          {new Date(achievement.target_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                         </span>
                       </div>
                     )}
