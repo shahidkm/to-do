@@ -70,6 +70,15 @@ const Navbar = () => {
             
               Achievements
           </button>
+
+           <button
+            className="block text-blue-800 hover:bg-blue-200 px-3 py-2 rounded-md w-full text-left"
+            onClick={() => handleNavigate("/freinds")}
+          >
+            
+              Freinds
+          </button>
+
           </div>
 
           {/* Mobile Menu Button */}
@@ -160,6 +169,14 @@ const Navbar = () => {
           >
 
             Achievements
+          </button>
+
+                        <button
+            className="block text-blue-800 hover:bg-blue-200 px-3 py-2 rounded-md w-full text-left"
+            onClick={() => handleNavigate("/freinds")}
+          >
+
+            Friends
           </button>
         </div>
       )}
