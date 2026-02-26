@@ -6,7 +6,6 @@ import {
   Star,
   Phone,
   Edit2,
-  Trash2,
   X,
   Search,
   Heart,
@@ -146,22 +145,7 @@ export default function FriendsPage() {
     setLoading(false);
   }
 
-  async function deleteFriend(id) {
-    if (!confirm("Are you sure you want to remove this friend?")) return;
 
-    setLoading(true);
-    const { error } = await supabase.from("friends").delete().eq("id", id);
-
-    if (error) {
-      console.error(error);
-      alert("Error deleting friend");
-      setLoading(false);
-      return;
-    }
-
-    await fetchFriends();
-    setLoading(false);
-  }
 
   function editFriend(friend) {
     setEditingFriend(friend);
@@ -639,17 +623,10 @@ export default function FriendsPage() {
                           <div className="flex gap-2 pt-3 border-t border-slate-100">
                             <button
                               onClick={() => editFriend(friend)}
-                              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg font-semibold hover:shadow-lg transition-all text-xs sm:text-sm hover:scale-[1.02] active:scale-95"
+                              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg font-semibold hover:shadow-lg transition-all text-xs sm:text-sm hover:scale-[1.02] active:scale-95"
                             >
                               <Edit2 size={14} />
                               <span>Edit</span>
-                            </button>
-                            <button
-                              onClick={() => deleteFriend(friend.id)}
-                              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-rose-500 to-red-500 text-white rounded-lg font-semibold hover:shadow-lg transition-all text-xs sm:text-sm hover:scale-[1.02] active:scale-95"
-                            >
-                              <Trash2 size={14} />
-                              <span>Delete</span>
                             </button>
                           </div>
                         </div>
