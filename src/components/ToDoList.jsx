@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Check, Trash2, Edit2, Plus, X, RefreshCw, Camera, Clock, Sparkles, TrendingUp, Building2, CalendarDays, Trophy, Star } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Check, Trash2, Edit2, Plus, X, RefreshCw, Camera, Clock, Sparkles, TrendingUp, Building2, Flag, Flame } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import Navbar from './NavBar';
 import TodaysQuotes from './TodaysQuotes';
@@ -8,26 +8,20 @@ const supabaseUrl = 'https://quufeiwzsgiuwkeyjjns.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1dWZlaXd6c2dpdXdrZXlqam5zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4ODQ5OTYsImV4cCI6MjA4MzQ2MDk5Nn0.KL0XNEg4o4RVMJOfAQdWQekug_sw2I0KNTLkj_73_sg';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// ─── M2H Infotech Countdown Config ───────────────────────────────────────────
-// Total journey: 365 days. Days already achieved: 153.
-// Remaining days when this was set up: 365 - 153 = 212
-// We calculate the actual target end date so the countdown stays live.
 const TOTAL_DAYS = 365;
-const DAYS_ACHIEVED = 153;
-const DAYS_REMAINING_AT_START = TOTAL_DAYS - DAYS_ACHIEVED; // 212
+const COMPLETED_DAYS = 211;
+const REMAINING_DAYS = TOTAL_DAYS - COMPLETED_DAYS;
 
-// Set the reference date to today when this component was first set up.
-// The end date = today + remaining days.
-// To make it persistent across sessions we store the end date in localStorage.
-function getEndDate() {
-  const stored = localStorage.getItem('m2h_end_date');
-  if (stored) return new Date(stored);
-  const end = new Date();
-  end.setDate(end.getDate() + DAYS_REMAINING_AT_START);
-  localStorage.setItem('m2h_end_date', end.toISOString());
-  return end;
-}
-// ─────────────────────────────────────────────────────────────────────────────
+const MOTIVATIONAL_MESSAGES = [
+  "Every day you survive is proof of your strength. Keep pushing!",
+  "You're more than halfway there. The finish line is in sight!",
+  "Each day builds the person you're becoming. Stay the course.",
+  "Hard days are just chapters, not the whole story.",
+  "You chose this challenge. Now own every single day of it!",
+  "The version of you on Day 365 will thank you for today.",
+  "Discipline is the bridge between goals and accomplishment.",
+  "Show up today like your future depends on it — because it does.",
+];
 
 export default function TodoList() {
   const [todos, setTodos] = useState([]);
@@ -41,86 +35,43 @@ export default function TodoList() {
   const [imageUrl, setImageUrl] = useState('');
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [addingTodo, setAddingTodo] = useState(false);
-  const [m2hEndDate] = useState(getEndDate);
-  const [showToast, setShowToast] = useState(false);
-  const [showCelebration, setShowCelebration] = useState(false);
-  const [confetti, setConfetti] = useState([]);
-  const [dayAlreadyCelebrated, setDayAlreadyCelebrated] = useState(
-    localStorage.getItem('lastCelebrated') === new Date().toDateString()
-  );
-  const prevAllDoneRef = useRef(false);
-
-  // Derived countdown values
-  const msLeft = m2hEndDate - currentTime;
-  const daysLeft = Math.max(0, Math.floor(msLeft / (1000 * 60 * 60 * 24)));
-  const hoursLeft = Math.max(0, Math.floor((msLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)));
-  const minsLeft = Math.max(0, Math.floor((msLeft % (1000 * 60 * 60)) / (1000 * 60)));
-  const secsLeft = Math.max(0, Math.floor((msLeft % (1000 * 60)) / 1000));
-  const daysElapsed = TOTAL_DAYS - daysLeft;
-  const progressPct = Math.min(100, Math.round((daysElapsed / TOTAL_DAYS) * 100));
+  const [showDayAlert, setShowDayAlert] = useState(false);
+  const [alertVisible, setAlertVisible] = useState(false);
 
   const defaultTodos = [
-    "Build A Good Charecter",
-    "Do Good Things Only",
-    "No Smoking",
-    "Be Metured",
+    "Build A Good Charecter","Do Good Things Only","No Smoking","Be Metured",
     "Think 3 Times Before Talking and Doing Anything",
-    "Dont Talk About Myself And Be A Good Listner",
-    "Dont Be Aggressive",
-    "Dont Be Selfish",
-    "Dont Be Toxic",
-    "Self Respect",
-    "Get Well Dressed"
+    "Dont Talk About Myself And Be A Good Listner","Dont Be Aggressive",
+    "Dont Be Selfish","Dont Be Toxic","Self Respect","Get Well Dressed"
   ];
 
   useEffect(() => {
     loadTodos();
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    const todayStr = new Date().toDateString();
+    const lastAlertDay = localStorage.getItem('lastDayAlertShown');
+    if (lastAlertDay !== todayStr) {
+      setTimeout(() => {
+        setShowDayAlert(true);
+        setTimeout(() => setAlertVisible(true), 50);
+      }, 600);
+    }
     return () => clearInterval(timer);
   }, []);
 
-  const triggerCelebration = useCallback(() => {
-    const pieces = Array.from({ length: 60 }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      delay: Math.random() * 1.5,
-      duration: 2 + Math.random() * 2,
-      color: ['#3B82F6','#6366F1','#EC4899','#F59E0B','#10B981','#F97316'][Math.floor(Math.random()*6)],
-      size: 6 + Math.random() * 8,
-      rotation: Math.random() * 360,
-    }));
-    setConfetti(pieces);
-    setShowCelebration(true);
-    setShowToast(true);
-    localStorage.setItem('lastCelebrated', new Date().toDateString());
-    setDayAlreadyCelebrated(true);
-    setTimeout(() => setShowToast(false), 5000);
-    setTimeout(() => { setShowCelebration(false); setConfetti([]); }, 4000);
-  }, []);
+  const closeDayAlert = () => {
+    setAlertVisible(false);
+    setTimeout(() => {
+      setShowDayAlert(false);
+      localStorage.setItem('lastDayAlertShown', new Date().toDateString());
+    }, 380);
+  };
 
-  // ── TEST: trigger celebration after 10 seconds ──
-  useEffect(() => {
-    const testTimer = setTimeout(() => {
-      triggerCelebration();
-    }, 10000);
-    return () => clearTimeout(testTimer);
-  }, [triggerCelebration]);
-
-  // Trigger celebration when all tasks become completed
-  useEffect(() => {
-    if (todos.length === 0) return;
-    const allDone = todos.every(t => t.completed);
-    if (allDone && !prevAllDoneRef.current && !dayAlreadyCelebrated) {
-      triggerCelebration();
-      prevAllDoneRef.current = true;
-    } else if (!allDone) {
-      prevAllDoneRef.current = false;
-    }
-  }, [todos, dayAlreadyCelebrated]);
+  const todayMotivation = MOTIVATIONAL_MESSAGES[COMPLETED_DAYS % MOTIVATIONAL_MESSAGES.length];
 
   const formatDateTime = () => {
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const day = days[currentTime.getDay()];
     const date = currentTime.getDate();
     const month = months[currentTime.getMonth()];
@@ -138,18 +89,12 @@ export default function TodoList() {
     setLoading(true);
     try {
       const todayStr = new Date().toISOString().split('T')[0];
-      const { data, error } = await supabase
-        .from('ToDo')
-        .select('*')
-        .eq('active', true)
-        .gte('created_at', `${todayStr}T00:00:00`)
-        .lte('created_at', `${todayStr}T23:59:59`)
+      const { data, error } = await supabase.from('ToDo').select('*').eq('active', true)
+        .gte('created_at', `${todayStr}T00:00:00`).lte('created_at', `${todayStr}T23:59:59`)
         .order('created_at', { ascending: false });
       if (error) throw error;
       setTodos(data || []);
-    } catch (error) {
-      console.error("Error loading todos:", error);
-    }
+    } catch (error) { console.error("Error loading todos:", error); }
     setLoading(false);
   };
 
@@ -164,10 +109,7 @@ export default function TodoList() {
       const { data, error } = await supabase.from('ToDo').insert([{ title: trimmedTodo, completed: false, active: true }]).select();
       if (error) throw error;
       if (data && data.length > 0) { setTodos([data[0], ...todos]); setNewTodo(''); }
-    } catch (error) {
-      console.error("Error adding todo:", error);
-      alert("Failed to add todo. Please try again.");
-    }
+    } catch (error) { console.error("Error adding todo:", error); alert("Failed to add todo. Please try again."); }
     setTimeout(() => setAddingTodo(false), 300);
   };
 
@@ -180,10 +122,7 @@ export default function TodoList() {
       const { error } = await supabase.from('ToDo').update({ completed: !todo.completed }).eq('id', id);
       if (error) throw error;
       setTodos(todos.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
-    } catch (error) {
-      console.error("Error toggling todo:", error);
-      alert("Failed to update todo. Please try again.");
-    }
+    } catch (error) { console.error("Error toggling todo:", error); alert("Failed to update todo."); }
   };
 
   const handleDelete = async (id) => {
@@ -191,10 +130,7 @@ export default function TodoList() {
       const { error } = await supabase.from('ToDo').update({ active: false }).eq('id', id);
       if (error) throw error;
       setTodos(todos.filter(t => t.id !== id));
-    } catch (error) {
-      console.error("Error deleting todo:", error);
-      alert("Failed to delete todo. Please try again.");
-    }
+    } catch (error) { console.error("Error deleting todo:", error); alert("Failed to delete todo."); }
   };
 
   const startEdit = (id, text) => { setEditingId(id); setEditText(text); };
@@ -206,10 +142,7 @@ export default function TodoList() {
       if (error) throw error;
       setTodos(todos.map(t => t.id === id ? { ...t, title: editText.trim() } : t));
       setEditingId(null); setEditText('');
-    } catch (error) {
-      console.error("Error editing todo:", error);
-      alert("Failed to edit todo. Please try again.");
-    }
+    } catch (error) { console.error("Error editing todo:", error); alert("Failed to edit todo."); }
   };
 
   const cancelEdit = () => { setEditingId(null); setEditText(''); };
@@ -224,7 +157,10 @@ export default function TodoList() {
   };
 
   const handleUrlSubmit = () => {
-    if (imageUrl.trim()) { setProfileImage(imageUrl.trim()); localStorage.setItem('profileImage', imageUrl.trim()); setImageUrl(''); setShowUrlInput(false); }
+    if (imageUrl.trim()) {
+      setProfileImage(imageUrl.trim()); localStorage.setItem('profileImage', imageUrl.trim());
+      setImageUrl(''); setShowUrlInput(false);
+    }
   };
 
   const handleRemoveImage = () => { setProfileImage(null); localStorage.removeItem('profileImage'); };
@@ -232,23 +168,25 @@ export default function TodoList() {
   const handleRegenerate = async () => {
     try {
       const todayStr = new Date().toISOString().split('T')[0];
-      const { data: existingTodos, error: fetchError } = await supabase.from('ToDo').select('title').gte('created_at', `${todayStr}T00:00:00`).lte('created_at', `${todayStr}T23:59:59`).eq('active', true);
+      const { data: existingTodos, error: fetchError } = await supabase.from('ToDo').select('title')
+        .gte('created_at', `${todayStr}T00:00:00`).lte('created_at', `${todayStr}T23:59:59`).eq('active', true);
       if (fetchError) throw fetchError;
       const existingTitles = existingTodos.map(t => t.title);
-      const newTodosData = defaultTodos.filter(title => !existingTitles.includes(title)).map(title => ({ title, completed: false, active: true }));
+      const newTodosData = defaultTodos.filter(title => !existingTitles.includes(title))
+        .map(title => ({ title, completed: false, active: true }));
       if (newTodosData.length === 0) { alert('All default tasks already exist today!'); return; }
       const { data: insertedData, error: insertError } = await supabase.from('ToDo').insert(newTodosData).select();
       if (insertError) throw insertError;
       setTodos(prev => [...insertedData, ...prev]);
-    } catch (error) {
-      console.error('Error regenerating todos:', error);
-      alert('Failed to regenerate todos. Please try again.');
-    }
+    } catch (error) { console.error('Error regenerating todos:', error); alert('Failed to regenerate todos.'); }
   };
 
   const completedCount = todos.filter(t => t.completed).length;
   const canRegenerate = lastRegenerate !== new Date().toDateString();
   const completionPercentage = todos.length > 0 ? Math.round((completedCount / todos.length) * 100) : 0;
+  const progressPercent = Math.round((COMPLETED_DAYS / TOTAL_DAYS) * 100);
+  const remainingPercent = Math.round((REMAINING_DAYS / TOTAL_DAYS) * 100);
+  const confettiColors = ['#f97316','#ec4899','#8b5cf6','#34d399','#f59e0b','#06b6d4','#ef4444','#a3e635'];
 
   return (
     <div>
@@ -258,103 +196,169 @@ export default function TodoList() {
         @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
         @keyframes pulse-glow { 0%,100%{box-shadow:0 0 20px rgba(59,130,246,.3)} 50%{box-shadow:0 0 40px rgba(59,130,246,.6)} }
         @keyframes slide-in { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes shimmer { 0%{background-position:-1000px 0} 100%{background-position:1000px 0} }
         @keyframes rotate-gradient { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
-        @keyframes countdown-pulse { 0%,100%{opacity:1} 50%{opacity:.7} }
-        @keyframes fire-glow { 0%,100%{box-shadow:0 0 30px rgba(239,68,68,.4),0 0 60px rgba(249,115,22,.2)} 50%{box-shadow:0 0 50px rgba(239,68,68,.7),0 0 80px rgba(249,115,22,.4)} }
-        @keyframes toast-up { from{opacity:0;transform:translateY(100px) scale(.9)} to{opacity:1;transform:translateY(0) scale(1)} }
-        @keyframes toast-down { from{opacity:1;transform:translateY(0) scale(1)} to{opacity:0;transform:translateY(100px) scale(.9)} }
-        @keyframes confetti-fall { 0%{transform:translateY(-20px) rotate(0deg);opacity:1} 100%{transform:translateY(100vh) rotate(720deg);opacity:0} }
-        @keyframes celebrate-pop { 0%{transform:scale(0) rotate(-10deg);opacity:0} 60%{transform:scale(1.1) rotate(3deg)} 100%{transform:scale(1) rotate(0deg);opacity:1} }
-        @keyframes star-spin { 0%{transform:rotate(0deg) scale(1)} 50%{transform:rotate(180deg) scale(1.3)} 100%{transform:rotate(360deg) scale(1)} }
+        @keyframes countdown-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.03)} }
+        @keyframes backdrop-in { from{opacity:0} to{opacity:1} }
+        @keyframes modal-pop-in { 0%{opacity:0;transform:scale(.6) translateY(60px)} 65%{transform:scale(1.05) translateY(-6px)} 100%{opacity:1;transform:scale(1) translateY(0)} }
+        @keyframes modal-pop-out { from{opacity:1;transform:scale(1) translateY(0)} to{opacity:0;transform:scale(.82) translateY(40px)} }
+        @keyframes num-bounce { 0%,100%{transform:translateY(0)} 40%{transform:translateY(-14px)} 60%{transform:translateY(-7px)} }
+        @keyframes ring-spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+        @keyframes confetti { 0%{transform:translateY(-8px) rotate(0deg);opacity:1} 100%{transform:translateY(65px) rotate(720deg);opacity:0} }
         .float-animation{animation:float 3s ease-in-out infinite}
         .pulse-glow{animation:pulse-glow 2s ease-in-out infinite}
         .slide-in{animation:slide-in .3s ease-out forwards}
         .gradient-animate{background-size:200% 200%;animation:rotate-gradient 3s ease infinite}
-        .countdown-pulse{animation:countdown-pulse 1s ease-in-out infinite}
-        .fire-glow{animation:fire-glow 2s ease-in-out infinite}
-        .toast-enter{animation:toast-up .4s cubic-bezier(.34,1.56,.64,1) forwards}
-        .toast-exit{animation:toast-down .3s ease-in forwards}
-        .celebrate-pop{animation:celebrate-pop .5s cubic-bezier(.34,1.56,.64,1) forwards}
-        .star-spin{animation:star-spin 2s linear infinite}
         .glass-card{background:rgba(255,255,255,.7);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.3)}
         .progress-ring{transition:stroke-dashoffset .5s ease}
-        .countdown-seg{min-width:52px}
+        .countdown-pulse{animation:countdown-pulse 2s ease-in-out infinite}
+        .m2h-card{background:linear-gradient(135deg,rgba(15,23,42,.92),rgba(30,41,59,.95));border:1px solid rgba(248,113,113,.3);backdrop-filter:blur(16px);box-shadow:0 8px 32px rgba(239,68,68,.15),0 0 0 1px rgba(255,255,255,.05)}
+        .freedom-number{background:linear-gradient(135deg,#f97316,#ef4444,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .days-done-number{background:linear-gradient(135deg,#34d399,#10b981);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .bd-in{animation:backdrop-in .3s ease forwards}
+        .bd-out{animation:backdrop-in .35s ease reverse forwards}
+        .modal-in{animation:modal-pop-in .55s cubic-bezier(.34,1.56,.64,1) forwards}
+        .modal-out{animation:modal-pop-out .35s ease forwards}
+        .num-bounce{animation:num-bounce 1.5s ease infinite}
+        .ring-spin{animation:ring-spin 5s linear infinite}
+        .confetti-dot{animation:confetti 1.8s ease-in infinite}
       `}</style>
+
+      {/* ── DAY ALERT MODAL ── */}
+      {showDayAlert && (
+        <div
+          className={`fixed inset-0 z-50 flex items-center justify-center px-4 ${alertVisible ? 'bd-in' : 'bd-out'}`}
+          style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(8px)' }}
+          onClick={closeDayAlert}
+        >
+          <div
+            className={`relative w-full max-w-sm rounded-3xl overflow-hidden ${alertVisible ? 'modal-in' : 'modal-out'}`}
+            style={{
+              background: 'linear-gradient(160deg,#0f172a 0%,#1e1b4b 55%,#0f172a 100%)',
+              border: '1px solid rgba(167,139,250,.3)',
+              boxShadow: '0 30px 70px rgba(0,0,0,.55),0 0 90px rgba(139,92,246,.2)',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {confettiColors.map((color, i) => (
+              <div key={i} className="confetti-dot absolute w-2 h-2 rounded-full pointer-events-none"
+                style={{ left: `${8 + i * 12}%`, top: 0, animationDelay: `${i * 0.2}s`, background: color }} />
+            ))}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-72 h-36 pointer-events-none"
+              style={{ background: 'radial-gradient(ellipse,rgba(139,92,246,.28) 0%,transparent 70%)', filter: 'blur(18px)' }} />
+
+            <div className="relative z-10 p-7 text-center">
+              <div className="relative w-20 h-20 mx-auto mb-5">
+                <div className="ring-spin absolute inset-0 rounded-full border-2 border-dashed border-purple-400/50" />
+                <div className="absolute inset-2 rounded-full flex items-center justify-center"
+                  style={{ background: 'linear-gradient(135deg,#7c3aed,#ec4899)' }}>
+                  <Flame size={30} className="text-white" />
+                </div>
+              </div>
+
+              <p className="text-purple-300 text-xs font-bold uppercase tracking-widest mb-3">Good Morning! 🌅</p>
+
+              <div className="num-bounce mb-1">
+                <span className="text-8xl font-black leading-none"
+                  style={{ background: 'linear-gradient(135deg,#f97316,#ec4899,#8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                  {COMPLETED_DAYS}
+                </span>
+              </div>
+              <p className="text-gray-400 text-sm font-medium mb-1">
+                of <span className="text-white font-bold">{TOTAL_DAYS}</span> days completed at M2H Infotech
+              </p>
+
+              <div className="w-full h-2.5 bg-white/10 rounded-full my-5 overflow-hidden">
+                <div className="h-full rounded-full"
+                  style={{ width: `${progressPercent}%`, background: 'linear-gradient(90deg,#8b5cf6,#ec4899,#f97316)', transition: 'width 1.2s ease' }} />
+              </div>
+
+              <div className="flex justify-center gap-5 mb-5">
+                <div className="text-center">
+                  <p className="text-2xl font-black text-emerald-400">{progressPercent}%</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Done</p>
+                </div>
+                <div className="w-px bg-white/10" />
+                <div className="text-center">
+                  <p className="text-2xl font-black" style={{ color: '#f97316' }}>{REMAINING_DAYS}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Days Left</p>
+                </div>
+                <div className="w-px bg-white/10" />
+                <div className="text-center">
+                  <p className="text-2xl font-black text-purple-400">{TOTAL_DAYS}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Total</p>
+                </div>
+              </div>
+
+              <div className="rounded-2xl px-4 py-3 mb-6"
+                style={{ background: 'rgba(139,92,246,.12)', border: '1px solid rgba(139,92,246,.25)' }}>
+                <p className="text-sm text-purple-200 leading-relaxed italic">{todayMotivation}</p>
+              </div>
+
+              <button onClick={closeDayAlert}
+                className="w-full py-4 rounded-2xl text-white font-bold text-base transition-all transform hover:scale-105 active:scale-95"
+                style={{ background: 'linear-gradient(135deg,#7c3aed,#ec4899)', boxShadow: '0 8px 24px rgba(124,58,237,.4)' }}>
+                Lets Crush Day {COMPLETED_DAYS + 1}!
+              </button>
+              <p className="text-xs text-gray-600 mt-3">Tap anywhere to close</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="min-h-screen bg-gradient-to-br from-blue-100 via-sky-50 to-indigo-100 py-8 px-4">
         <div className="max-w-md mx-auto">
 
-          {/* ── M2H INFOTECH COUNTDOWN BANNER ── */}
-          <div className="fire-glow rounded-3xl p-5 mb-6 slide-in relative overflow-hidden"
-               style={{background:'linear-gradient(135deg,#1e1b4b 0%,#312e81 40%,#4c1d95 70%,#7c3aed 100%)'}}>
-            {/* Animated shimmer overlay */}
-            <div className="absolute inset-0 opacity-20"
-                 style={{background:'linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent)',backgroundSize:'200% 100%',animation:'shimmer 3s infinite'}}></div>
-
-            {/* Header row */}
-            <div className="relative z-10 flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                  <Building2 size={18} className="text-white" />
-                </div>
-                <div>
-                  <p className="text-white/60 text-xs font-medium uppercase tracking-widest">Time Remaining to Leave</p>
-                  <p className="text-white font-bold text-lg leading-tight">M2H Infotech</p>
-                </div>
+          {/* M2H COUNTDOWN */}
+          <div className="m2h-card rounded-3xl p-6 mb-6 relative overflow-hidden slide-in">
+            <div className="absolute -top-10 -right-10 w-40 h-40 bg-red-500/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center justify-center">
+                <Building2 size={20} className="text-red-400" />
               </div>
-              <div className="flex items-center gap-1.5 bg-white/15 rounded-full px-3 py-1.5">
-                <CalendarDays size={14} className="text-purple-200" />
-                <span className="text-purple-100 text-xs font-semibold">{daysElapsed}/{TOTAL_DAYS} days</span>
+              <div>
+                <p className="text-xs font-semibold text-red-400 uppercase tracking-widest">Time Remaining</p>
+                <h2 className="text-base font-bold text-white leading-tight">Leave M2H Infotech</h2>
+              </div>
+              <div className="ml-auto"><Flag size={18} className="text-orange-400" /></div>
+            </div>
+            <div className="flex items-end justify-between mb-5">
+              <div className="countdown-pulse">
+                <div className="freedom-number text-7xl font-black leading-none tracking-tighter">{REMAINING_DAYS}</div>
+                <p className="text-gray-400 text-sm font-medium mt-1">days to freedom</p>
+              </div>
+              <div className="text-right">
+                <div className="days-done-number text-4xl font-black leading-none">{COMPLETED_DAYS}</div>
+                <p className="text-gray-500 text-xs mt-1">days done</p>
+                <div className="text-gray-600 text-xs mt-2 font-medium">of {TOTAL_DAYS} days</div>
               </div>
             </div>
-
-            {/* Countdown segments */}
-            <div className="relative z-10 flex items-center justify-center gap-3 mb-4">
-              {[
-                { value: String(daysLeft).padStart(3,'0'), label: 'Days' },
-                { value: String(hoursLeft).padStart(2,'0'), label: 'Hrs' },
-                { value: String(minsLeft).padStart(2,'0'), label: 'Min' },
-                { value: String(secsLeft).padStart(2,'0'), label: 'Sec' },
-              ].map(({ value, label }, i) => (
-                <React.Fragment key={label}>
-                  <div className="countdown-seg text-center">
-                    <div className="bg-white/15 backdrop-blur rounded-xl px-3 py-2 border border-white/20">
-                      <span className={`block text-2xl font-bold text-white tabular-nums ${label==='Sec'?'countdown-pulse':''}`}>
-                        {value}
-                      </span>
-                    </div>
-                    <span className="text-purple-200 text-xs mt-1 block font-medium">{label}</span>
-                  </div>
-                  {i < 3 && <span className="text-white/50 text-xl font-bold mb-4">:</span>}
-                </React.Fragment>
-              ))}
+            <div className="mb-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-xs text-gray-500 font-medium">Journey Progress</span>
+                <span className="text-xs font-bold text-emerald-400">{progressPercent}% complete</span>
+              </div>
+              <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden">
+                <div className="h-full rounded-full transition-all duration-1000"
+                  style={{ width: `${progressPercent}%`, background: 'linear-gradient(90deg,#10b981,#34d399)' }}></div>
+              </div>
+              <div className="flex justify-between mt-1.5">
+                <span className="text-xs text-emerald-500">Start</span>
+                <span className="text-xs text-orange-400">{remainingPercent}% left</span>
+                <span className="text-xs text-red-400">Freedom</span>
+              </div>
             </div>
-
-            {/* Progress bar */}
-            <div className="relative z-10">
-              <div className="flex justify-between text-xs text-white/50 mb-1.5">
-                <span>Journey Progress</span>
-                <span>{progressPct}% complete</span>
+            <div className="flex gap-2 flex-wrap">
+              <div className="px-3 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 text-xs font-semibold">
+                {COMPLETED_DAYS} days survived
               </div>
-              <div className="w-full h-2.5 bg-white/10 rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-700"
-                  style={{
-                    width:`${progressPct}%`,
-                    background:'linear-gradient(90deg,#a78bfa,#ec4899)'
-                  }}
-                />
-              </div>
-              <div className="flex justify-between text-xs text-white/40 mt-1">
-                <span>Day 1</span>
-                <span>Day {TOTAL_DAYS} 🎯</span>
+              <div className="px-3 py-1.5 rounded-lg bg-orange-500/15 border border-orange-500/25 text-orange-400 text-xs font-semibold">
+                {REMAINING_DAYS} days to go
               </div>
             </div>
           </div>
-          {/* ── END COUNTDOWN ── */}
 
-          {/* Profile Image Section */}
+          {/* Profile Image */}
           <div className="glass-card rounded-3xl p-6 mb-6 relative overflow-hidden slide-in">
             <div className="absolute inset-0 bg-gradient-to-br from-blue-400/10 via-sky-300/10 to-indigo-400/10 gradient-animate opacity-50"></div>
             <div className="relative z-10">
@@ -362,10 +366,13 @@ export default function TodoList() {
                 <div className="relative inline-block w-full">
                   <div className="w-40 h-40 mx-auto mb-4 relative group">
                     <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full blur-xl opacity-50 group-hover:opacity-75 transition-opacity"></div>
-                    <img src={profileImage} alt="Profile" className="relative w-full h-full object-cover rounded-full border-4 border-white shadow-2xl transform transition-transform group-hover:scale-105"
-                      onError={(e) => { e.target.src='data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23e0e7ff" width="200" height="200"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-size="16"%3EImage Error%3C/text%3E%3C/svg%3E'; }} />
+                    <img src={profileImage} alt="Profile"
+                      className="relative w-full h-full object-cover rounded-full border-4 border-white shadow-2xl transform transition-transform group-hover:scale-105"
+                      onError={(e) => { e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23e0e7ff" width="200" height="200"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-size="16"%3EImage Error%3C/text%3E%3C/svg%3E'; }}
+                    />
                   </div>
-                  <button onClick={handleRemoveImage} className="absolute top-0 right-1/2 translate-x-20 -translate-y-2 w-10 h-10 bg-gradient-to-br from-red-400 to-red-600 text-white rounded-full flex items-center justify-center hover:from-red-500 hover:to-red-700 transition-all transform hover:scale-110 shadow-lg">
+                  <button onClick={handleRemoveImage}
+                    className="absolute top-0 right-1/2 translate-x-20 -translate-y-2 w-10 h-10 bg-gradient-to-br from-red-400 to-red-600 text-white rounded-full flex items-center justify-center hover:from-red-500 hover:to-red-700 transition-all transform hover:scale-110 shadow-lg">
                     <X size={20} />
                   </button>
                 </div>
@@ -384,12 +391,15 @@ export default function TodoList() {
                   </div>
                 </label>
                 {!showUrlInput ? (
-                  <button onClick={() => setShowUrlInput(true)} className="px-6 py-3 bg-white/80 border-2 border-blue-200 text-blue-600 rounded-xl hover:bg-white transition-all transform hover:scale-105 shadow-md">
+                  <button onClick={() => setShowUrlInput(true)}
+                    className="px-6 py-3 bg-white/80 border-2 border-blue-200 text-blue-600 rounded-xl hover:bg-white transition-all transform hover:scale-105 shadow-md">
                     <span className="text-sm font-semibold">Use Image URL</span>
                   </button>
                 ) : (
                   <div className="flex gap-2 slide-in">
-                    <input type="text" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} onKeyDown={(e) => e.key==='Enter'&&handleUrlSubmit()} placeholder="Enter image URL..." className="flex-1 px-4 py-3 border-2 border-blue-200 rounded-xl text-sm focus:outline-none focus:border-blue-400 bg-white/80" />
+                    <input type="text" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleUrlSubmit()} placeholder="Enter image URL..."
+                      className="flex-1 px-4 py-3 border-2 border-blue-200 rounded-xl text-sm focus:outline-none focus:border-blue-400 bg-white/80" />
                     <button onClick={handleUrlSubmit} className="px-4 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all"><Check size={20} /></button>
                     <button onClick={() => { setShowUrlInput(false); setImageUrl(''); }} className="px-4 py-3 bg-gray-100 text-gray-500 rounded-xl hover:bg-gray-200 transition-all"><X size={20} /></button>
                   </div>
@@ -398,7 +408,7 @@ export default function TodoList() {
             </div>
           </div>
 
-          {/* Modern Clock Widget */}
+          {/* Clock */}
           <div className="glass-card rounded-3xl p-6 mb-6 relative overflow-hidden slide-in">
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-400/10 via-blue-300/10 to-sky-400/10 gradient-animate opacity-50"></div>
             <div className="relative z-10 text-center">
@@ -432,12 +442,12 @@ export default function TodoList() {
                 <div className="relative w-24 h-24">
                   <svg className="transform -rotate-90 w-24 h-24">
                     <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="none" className="text-blue-100" />
-                    <circle cx="48" cy="48" r="40" stroke="url(#gradient)" strokeWidth="8" fill="none"
+                    <circle cx="48" cy="48" r="40" stroke="url(#grad2)" strokeWidth="8" fill="none"
                       strokeDasharray={`${2 * Math.PI * 40}`}
                       strokeDashoffset={`${2 * Math.PI * 40 * (1 - completionPercentage / 100)}`}
                       className="progress-ring" strokeLinecap="round" />
                     <defs>
-                      <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
                         <stop offset="0%" stopColor="#3B82F6" />
                         <stop offset="100%" stopColor="#6366F1" />
                       </linearGradient>
@@ -473,14 +483,15 @@ export default function TodoList() {
             </div>
             <button onClick={handleRegenerate} disabled={!canRegenerate}
               className={`p-3 rounded-xl transition-all transform hover:scale-110 ${canRegenerate ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 shadow-lg pulse-glow' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
-              <RefreshCw size={20} className={canRegenerate ? 'animate-spin-slow' : ''} />
+              <RefreshCw size={20} />
             </button>
           </div>
 
-          {/* Add Todo Input */}
+          {/* Add Todo */}
           <div className="mb-6 slide-in">
             <div className="relative glass-card rounded-2xl overflow-hidden">
-              <input type="text" value={newTodo} onChange={(e) => setNewTodo(e.target.value)} onKeyDown={handleKeyPress} placeholder="Add a new task..."
+              <input type="text" value={newTodo} onChange={(e) => setNewTodo(e.target.value)} onKeyDown={handleKeyPress}
+                placeholder="Add a new task..."
                 className="w-full px-6 py-5 pr-16 bg-transparent border-2 border-transparent focus:border-blue-300 focus:outline-none text-gray-700 placeholder-gray-400 transition-all" />
               <button onClick={handleAddTodo} disabled={addingTodo}
                 className="absolute right-2 top-1/2 -translate-y-1/2 w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-xl flex items-center justify-center hover:from-blue-600 hover:to-indigo-700 transition-all transform hover:scale-110 shadow-lg disabled:opacity-50">
@@ -510,7 +521,8 @@ export default function TodoList() {
                   <div key={todo.id} className="slide-in" style={{ animationDelay: `${index * 0.05}s` }}>
                     {editingId === todo.id ? (
                       <div className="flex items-center gap-2 py-3 px-3 bg-blue-50/50 rounded-xl">
-                        <input value={editText} onChange={(e) => setEditText(e.target.value)} className="flex-1 px-4 py-2.5 border-2 border-blue-300 rounded-xl text-sm focus:outline-none focus:border-blue-400 bg-white" autoFocus />
+                        <input value={editText} onChange={(e) => setEditText(e.target.value)}
+                          className="flex-1 px-4 py-2.5 border-2 border-blue-300 rounded-xl text-sm focus:outline-none focus:border-blue-400 bg-white" autoFocus />
                         <button onClick={() => handleEdit(todo.id)} className="p-2.5 bg-green-500 hover:bg-green-600 rounded-xl text-white transition-all transform hover:scale-110 shadow-md"><Check size={18} /></button>
                         <button onClick={cancelEdit} className="p-2.5 bg-red-500 hover:bg-red-600 rounded-xl text-white transition-all transform hover:scale-110 shadow-md"><X size={18} /></button>
                       </div>
@@ -537,73 +549,6 @@ export default function TodoList() {
 
         </div>
       </div>
-
-      {/* ── CONFETTI OVERLAY ── */}
-      {showCelebration && (
-        <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-          {confetti.map(p => (
-            <div key={p.id} style={{
-              position:'absolute', left:`${p.x}%`, top:'-10px',
-              width:`${p.size}px`, height:`${p.size}px`,
-              backgroundColor:p.color,
-              borderRadius: p.id%3===0?'50%':p.id%3===1?'2px':'0',
-              animation:`confetti-fall ${p.duration}s ${p.delay}s ease-in forwards`,
-              transform:`rotate(${p.rotation}deg)`,
-            }}/>
-          ))}
-        </div>
-      )}
-
-      {/* ── MOBILE SMS-STYLE TOAST ── */}
-      {showToast && (
-        <div className="fixed bottom-6 left-4 right-4 z-50 max-w-md mx-auto toast-enter">
-          <div className="rounded-2xl overflow-hidden shadow-2xl"
-               style={{background:'linear-gradient(135deg,#1e1b4b,#312e81,#4c1d95)'}}>
-            {/* Header row like iMessage */}
-            <div className="flex items-center gap-3 px-4 pt-3 pb-2 border-b border-white/10">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center flex-shrink-0 shadow-lg">
-                <Trophy size={18} className="text-white"/>
-              </div>
-              <div className="flex-1">
-                <p className="text-white font-semibold text-sm">Daily Goal Achieved 🎯</p>
-                <p className="text-white/50 text-xs">just now</p>
-              </div>
-              <button onClick={()=>setShowToast(false)} className="text-white/40 hover:text-white/80 p-1 transition-colors">
-                <X size={16}/>
-              </button>
-            </div>
-
-            {/* Bubble body */}
-            <div className="px-4 py-3">
-              <div className="bg-white/15 rounded-xl rounded-tl-sm px-4 py-3">
-                <div className="flex items-start gap-2">
-                  <Star size={16} className="text-yellow-400 star-spin flex-shrink-0 mt-0.5"/>
-                  <div>
-                    <p className="text-white font-medium text-sm leading-snug">
-                      You crushed it today! All tasks done 🔥
-                    </p>
-                    <p className="text-white/60 text-xs mt-1.5 leading-relaxed">
-                      Every completed day brings you closer to your freedom. Keep going — {daysLeft} days left at M2H Infotech 💪
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center justify-between mt-2.5 px-1">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
-                  <span className="text-white/50 text-xs">Day complete ✓</span>
-                </div>
-                <span className="text-white/40 text-xs">{new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>
-              </div>
-            </div>
-
-            <div className="flex justify-center pb-2">
-              <div className="w-10 h-1 bg-white/20 rounded-full"></div>
-            </div>
-          </div>
-        </div>
-      )}
-
     </div>
   );
 }
