@@ -2,14 +2,14 @@ import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const NAV_LINKS = [
-  { label: "Home",         path: "/" },
-  { label: "Performance",  path: "/performance-dashboard" },
-  { label: "Rewards",      path: "/reward-dashboard" },
-  { label: "Plans",        path: "/plans" },
+  { label: "Home", path: "/" },
+  { label: "Performance", path: "/performance-dashboard" },
+  { label: "Rewards", path: "/reward-dashboard" },
+  { label: "Plans", path: "/plans" },
   { label: "Inspirations", path: "/inspirations" },
-  { label: "Previous",     path: "/previous-todos" },
+  { label: "Previous", path: "/previous-todos" },
   { label: "Achievements", path: "/achievements" },
-  { label: "Friends",      path: "/freinds" },
+  { label: "Friends", path: "/freinds" },
 ];
 
 const CSS = `
@@ -23,11 +23,11 @@ const CSS = `
 
 /* Glassmorphism bar */
 .nb-bar {
-  background: rgba(4, 10, 30, 0.82);
+  background: rgba(6, 9, 19, 0.85);
   border-bottom: 1px solid rgba(0, 229, 255, 0.15);
   backdrop-filter: blur(24px) saturate(1.6);
   -webkit-backdrop-filter: blur(24px) saturate(1.6);
-  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(0,229,255,0.08) inset;
+  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(0,229,255,0.08) inset;
 }
 
 /* Logo */
@@ -116,7 +116,7 @@ const CSS = `
 
 /* Mobile dropdown */
 .nb-mobile {
-  background: rgba(3, 8, 26, 0.97);
+  background: rgba(6, 9, 19, 0.98);
   border-top: 1px solid rgba(0, 229, 255, 0.1);
   border-bottom: 1px solid rgba(0, 229, 255, 0.1);
   backdrop-filter: blur(20px);
@@ -202,9 +202,9 @@ const CSS = `
 `;
 
 export default function Navbar() {
-  const [isOpen, setIsOpen]   = useState(false);
-  const navigate              = useNavigate();
-  const location              = useLocation();
+  const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const handleNavigate = (path) => {
     navigate(path);

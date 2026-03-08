@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Quote, Plus, Trash2, Edit2, Check, X, Star, BookOpen, Film, Music, User, Sparkles } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
-import Navbar from './NavBar';
 
 const supabaseUrl = 'https://quufeiwzsgiuwkeyjjns.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1dWZlaXd6c2dpdXdrZXlqam5zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4ODQ5OTYsImV4cCI6MjA4MzQ2MDk5Nn0.KL0XNEg4o4RVMJOfAQdWQekug_sw2I0KNTLkj_73_sg';
@@ -12,7 +11,7 @@ export default function QuoteManager() {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
   const [showForm, setShowForm] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     quote_text: '',
     author: '',
@@ -45,7 +44,7 @@ export default function QuoteManager() {
         .select('*')
         .eq('is_active', true)
         .order('created_at', { ascending: false });
-      
+
       if (error) throw error;
       setQuotes(data || []);
     } catch (error) {
@@ -68,7 +67,7 @@ export default function QuoteManager() {
           .eq('id', editingId);
 
         if (error) throw error;
-        
+
         setQuotes(quotes.map(q => q.id === editingId ? { ...q, ...formData } : q));
         setEditingId(null);
       } else {
@@ -78,7 +77,7 @@ export default function QuoteManager() {
           .select();
 
         if (error) throw error;
-        
+
         if (data && data.length > 0) {
           setQuotes([data[0], ...quotes]);
         }
@@ -102,7 +101,7 @@ export default function QuoteManager() {
         .eq('id', id);
 
       if (error) throw error;
-      
+
       setQuotes(quotes.filter(q => q.id !== id));
     } catch (error) {
       console.error("Error deleting quote:", error);
@@ -132,8 +131,8 @@ export default function QuoteManager() {
         .eq('id', quote.id);
 
       if (error) throw error;
-      
-      setQuotes(quotes.map(q => 
+
+      setQuotes(quotes.map(q =>
         q.id === quote.id ? { ...q, is_featured: !q.is_featured } : q
       ));
     } catch (error) {
@@ -156,270 +155,321 @@ export default function QuoteManager() {
 
   const getSourceIcon = (source) => {
     const icons = {
-      book: <BookOpen size={16} />,
-      movie: <Film size={16} />,
-      song: <Music size={16} />,
-      personal: <User size={16} />,
-      speech: <Quote size={16} />,
-      internet: <Sparkles size={16} />
+      book: <BookOpen size={14} />,
+      movie: <Film size={14} />,
+      song: <Music size={14} />,
+      personal: <User size={14} />,
+      speech: <Quote size={14} />,
+      internet: <Sparkles size={14} />
     };
-    return icons[source] || <Quote size={16} />;
+    return icons[source] || <Quote size={14} />;
   };
 
   const getCategoryColor = (category) => {
     const colors = {
-      motivation: 'from-orange-50 to-amber-50 border-orange-200 text-orange-700',
-      travel: 'from-sky-50 to-blue-50 border-sky-200 text-sky-700',
-      life: 'from-emerald-50 to-teal-50 border-emerald-200 text-emerald-700',
-      success: 'from-purple-50 to-violet-50 border-purple-200 text-purple-700',
-      wisdom: 'from-slate-50 to-gray-50 border-slate-200 text-slate-700',
-      love: 'from-rose-50 to-pink-50 border-rose-200 text-rose-700'
+      motivation: 'text-amber-400 bg-amber-400/10 border-amber-400/30 shadow-[0_0_10px_rgba(251,191,36,0.1)]',
+      travel: 'text-sky-400 bg-sky-400/10 border-sky-400/30 shadow-[0_0_10px_rgba(56,189,248,0.1)]',
+      life: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/30 shadow-[0_0_10px_rgba(52,211,153,0.1)]',
+      success: 'text-fuchsia-400 bg-fuchsia-400/10 border-fuchsia-400/30 shadow-[0_0_10px_rgba(232,121,249,0.1)]',
+      wisdom: 'text-indigo-400 bg-indigo-400/10 border-indigo-400/30 shadow-[0_0_10px_rgba(129,140,248,0.1)]',
+      love: 'text-rose-400 bg-rose-400/10 border-rose-400/30 shadow-[0_0_10px_rgba(251,113,133,0.1)]'
     };
-    return colors[category] || 'from-slate-50 to-gray-50 border-slate-200 text-slate-700';
+    return colors[category] || 'text-gray-400 bg-gray-400/10 border-gray-400/30';
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 flex items-center justify-center">
+      <div className="flex justify-center py-20 px-4">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-sky-200 border-t-sky-500 rounded-full animate-spin"></div>
-          <div className="text-slate-600 text-lg font-medium">Loading quotes...</div>
+          <div className="w-12 h-12 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin shadow-[0_0_15px_rgba(34,211,238,0.5)]"></div>
+          <div className="text-cyan-400 font-mono text-xs tracking-widest uppercase animate-pulse">Accessing Databanks...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div>
-   
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 py-8 px-4">
-        <div className="max-w-6xl mx-auto">
-          
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center p-4 bg-white rounded-2xl mb-4 shadow-lg shadow-sky-100">
-              <Quote className="text-sky-500" size={42} strokeWidth={2.5} />
+    <div className="animate-slideIn relative z-10" style={{ animationDelay: '0.1s' }}>
+      <style>{`
+        .dash-glass {
+          background: rgba(15, 23, 42, 0.6);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+        .dash-input {
+          background: rgba(30, 41, 59, 0.5);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          color: #e2e8f0;
+          transition: all 0.3s ease;
+        }
+        .dash-input:focus {
+          border-color: rgba(34, 211, 238, 0.5);
+          box-shadow: 0 0 10px rgba(34, 211, 238, 0.2);
+          outline: none;
+        }
+        .dash-btn {
+          background: linear-gradient(to right, rgba(34, 211, 238, 0.8), rgba(56, 189, 248, 0.8));
+          color: white;
+          border: 1px solid rgba(34, 211, 238, 0.5);
+          transition: all 0.3s ease;
+        }
+        .dash-btn:hover {
+          background: linear-gradient(to right, rgba(34, 211, 238, 1), rgba(56, 189, 248, 1));
+          box-shadow: 0 0 15px rgba(34, 211, 238, 0.4);
+        }
+        .dash-select {
+          background-color: rgba(30, 41, 59, 0.5);
+          color: #e2e8f0;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .dash-select option {
+          background-color: #0f172a;
+          color: #e2e8f0;
+        }
+      `}</style>
+
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+
+        {/* Header Section (Internal to Manager) */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8 mt-12 pt-8 border-t border-white/5">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl border border-cyan-500/30 flex items-center justify-center text-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.2)] bg-gray-900/50">
+              <Quote size={24} />
             </div>
-            <h1 className="text-5xl font-bold text-slate-800 mb-2 tracking-tight">Make Your Day</h1>
-            <p className="text-slate-500 text-lg font-medium">Keep It Always In Mind</p>
-          </div>
-
-          <div className="mb-6 flex justify-end">
-            <button
-              onClick={() => {
-                resetForm();
-                setShowForm(!showForm);
-              }}
-              className="px-6 py-3 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-xl hover:from-sky-600 hover:to-blue-700 transition-all font-semibold shadow-lg shadow-sky-200 flex items-center gap-2"
-            >
-              {showForm ? <X size={20} /> : <Plus size={20} />}
-              {showForm ? 'Cancel' : 'Add New Quote'}
-            </button>
-          </div>
-
-          {showForm && (
-            <div className="bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/50 border border-slate-100 mb-8">
-              <h2 className="text-2xl font-bold text-slate-800 mb-6">
-                {editingId ? 'Edit Quote' : 'Create New Quote'}
+            <div>
+              <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-gray-100 via-white to-gray-400 tracking-tight">
+                Quote Registry
               </h2>
-              <div className="space-y-5">
+              <p className="text-cyan-400/60 font-mono text-xs tracking-widest uppercase mt-1">
+                Manage Textual Assets
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => {
+              resetForm();
+              setShowForm(!showForm);
+            }}
+            className="w-full sm:w-auto dash-btn px-6 py-3.5 flex items-center justify-center gap-2 rounded-xl text-xs font-semibold tracking-widest uppercase hover:scale-[1.02] active:scale-95 transition-all"
+          >
+            {showForm ? <X size={16} /> : <Plus size={16} />}
+            {showForm ? 'Abort Entry' : 'Append Record'}
+          </button>
+        </div>
+
+        {showForm && (
+          <div className="dash-glass rounded-3xl p-6 sm:p-8 mb-10 border border-cyan-500/30 animate-slideIn">
+            <h2 className="text-xl font-bold text-gray-200 mb-6 flex items-center gap-3">
+              <div className="p-2 bg-cyan-500/10 rounded-lg text-cyan-400 border border-cyan-500/30">
+                <Edit2 size={16} />
+              </div>
+              {editingId ? 'Modify Record' : 'Initialize New Entry'}
+            </h2>
+
+            <div className="space-y-6">
+              <div>
+                <label className="block text-[10px] font-mono tracking-widest uppercase text-gray-400 mb-2">Quote Content *</label>
+                <textarea
+                  value={formData.quote_text}
+                  onChange={(e) => setFormData({ ...formData, quote_text: e.target.value })}
+                  rows={4}
+                  placeholder="Input text block..."
+                  className="w-full px-4 py-3 dash-input rounded-xl text-sm sm:text-base resize-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Quote Text *</label>
-                  <textarea
-                    value={formData.quote_text}
-                    onChange={(e) => setFormData({ ...formData, quote_text: e.target.value })}
-                    rows={4}
-                    placeholder="Enter your inspirational quote..."
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:border-sky-400 focus:bg-white transition-all resize-none"
+                  <label className="block text-[10px] font-mono tracking-widest uppercase text-gray-400 mb-2">Source Origin (Author)</label>
+                  <input
+                    type="text"
+                    value={formData.author}
+                    onChange={(e) => setFormData({ ...formData, author: e.target.value })}
+                    placeholder="e.g., entity name"
+                    className="w-full px-4 py-3 dash-input rounded-xl text-sm sm:text-base"
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">Author</label>
+                <div>
+                  <label className="block text-[10px] font-mono tracking-widest uppercase text-gray-400 mb-2">Classification</label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    className="w-full px-4 py-3 dash-select rounded-xl text-sm sm:text-base appearance-none bg-gray-900/50"
+                  >
+                    {categories.map(cat => (
+                      <option key={cat} value={cat}>{cat.toUpperCase()}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-mono tracking-widest uppercase text-gray-400 mb-2">Emotional Vector</label>
+                  <select
+                    value={formData.mood}
+                    onChange={(e) => setFormData({ ...formData, mood: e.target.value })}
+                    className="w-full px-4 py-3 dash-select rounded-xl text-sm sm:text-base appearance-none bg-gray-900/50"
+                  >
+                    {moods.map(mood => (
+                      <option key={mood} value={mood}>{mood.toUpperCase()}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-mono tracking-widest uppercase text-gray-400 mb-2">Syntax Language</label>
+                  <select
+                    value={formData.language}
+                    onChange={(e) => setFormData({ ...formData, language: e.target.value })}
+                    className="w-full px-4 py-3 dash-select rounded-xl text-sm sm:text-base appearance-none bg-gray-900/50"
+                  >
+                    {languages.map(lang => (
+                      <option key={lang.code} value={lang.code}>{lang.name.toUpperCase()}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-mono tracking-widest uppercase text-gray-400 mb-2">Media Origin</label>
+                  <select
+                    value={formData.source}
+                    onChange={(e) => setFormData({ ...formData, source: e.target.value })}
+                    className="w-full px-4 py-3 dash-select rounded-xl text-sm sm:text-base appearance-none bg-gray-900/50"
+                  >
+                    {sources.map(src => (
+                      <option key={src} value={src}>{src.toUpperCase()}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center mt-2">
+                  <label className="flex items-center gap-3 cursor-pointer group">
                     <input
-                      type="text"
-                      value={formData.author}
-                      onChange={(e) => setFormData({ ...formData, author: e.target.value })}
-                      placeholder="e.g., Albert Einstein"
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:border-sky-400 focus:bg-white transition-all"
+                      type="checkbox"
+                      checked={formData.is_featured}
+                      onChange={(e) => setFormData({ ...formData, is_featured: e.target.checked })}
+                      className="peer sr-only"
                     />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">Category</label>
-                    <select
-                      value={formData.category}
-                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-sky-400 focus:bg-white transition-all"
-                    >
-                      {categories.map(cat => (
-                        <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">Mood</label>
-                    <select
-                      value={formData.mood}
-                      onChange={(e) => setFormData({ ...formData, mood: e.target.value })}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-sky-400 focus:bg-white transition-all"
-                    >
-                      {moods.map(mood => (
-                        <option key={mood} value={mood}>{mood.charAt(0).toUpperCase() + mood.slice(1)}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">Language</label>
-                    <select
-                      value={formData.language}
-                      onChange={(e) => setFormData({ ...formData, language: e.target.value })}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-sky-400 focus:bg-white transition-all"
-                    >
-                      {languages.map(lang => (
-                        <option key={lang.code} value={lang.code}>{lang.name}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">Source</label>
-                    <select
-                      value={formData.source}
-                      onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-sky-400 focus:bg-white transition-all"
-                    >
-                      {sources.map(src => (
-                        <option key={src} value={src}>{src.charAt(0).toUpperCase() + src.slice(1)}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="flex items-center">
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={formData.is_featured}
-                        onChange={(e) => setFormData({ ...formData, is_featured: e.target.checked })}
-                        className="w-5 h-5 rounded border-slate-300 text-sky-500 focus:ring-sky-400"
-                      />
-                      <span className="text-sm font-semibold text-slate-700">Mark as Featured</span>
-                    </label>
-                  </div>
-                </div>
-
-                <div className="flex gap-3 pt-4">
-                  <button
-                    onClick={handleSubmit}
-                    className="flex-1 px-6 py-3 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-xl hover:from-sky-600 hover:to-blue-700 transition-all font-semibold shadow-lg shadow-sky-200"
-                  >
-                    {editingId ? 'Update Quote' : 'Create Quote'}
-                  </button>
-                  <button
-                    onClick={() => {
-                      resetForm();
-                      setShowForm(false);
-                    }}
-                    className="px-6 py-3 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-all font-semibold"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/50 border border-slate-100">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-slate-800">All Quotes ({quotes.length})</h2>
-            </div>
-
-            {quotes.length === 0 ? (
-              <div className="text-center py-16 bg-slate-50 rounded-xl border border-slate-100">
-                <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-                  <Quote className="text-slate-300" size={36} />
-                </div>
-                <p className="text-slate-500 font-medium text-lg mb-1">No quotes yet</p>
-                <p className="text-slate-400 text-sm">Click "Add New Quote" to create your first quote</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {quotes.map((quote) => (
-                  <div
-                    key={quote.id}
-                    className="p-6 bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl border border-slate-100 hover:shadow-lg transition-all"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-3 flex-wrap">
-                          <span className={`px-3 py-1 rounded-lg text-xs font-semibold border bg-gradient-to-r ${getCategoryColor(quote.category)}`}>
-                            {quote.category}
-                          </span>
-                          <span className="px-3 py-1 rounded-lg text-xs font-semibold bg-white border border-slate-200 text-slate-600 flex items-center gap-1">
-                            {getSourceIcon(quote.source)}
-                            {quote.source}
-                          </span>
-                          <span className="px-3 py-1 rounded-lg text-xs font-semibold bg-white border border-slate-200 text-slate-600">
-                            {quote.mood}
-                          </span>
-                          {quote.is_featured && (
-                            <span className="px-3 py-1 rounded-lg text-xs font-semibold bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 text-amber-700 flex items-center gap-1">
-                              <Star size={14} className="fill-amber-500 text-amber-500" />
-                              Featured
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-lg text-slate-700 font-medium mb-2 italic">"{quote.quote_text}"</p>
-                        {quote.author && (
-                          <p className="text-sm text-slate-500 font-semibold">— {quote.author}</p>
-                        )}
-                        <p className="text-xs text-slate-400 mt-2">
-                          {new Date(quote.created_at).toLocaleDateString('en-US', { 
-                            year: 'numeric', 
-                            month: 'short', 
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </p>
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        <button
-                          onClick={() => toggleFeatured(quote)}
-                          className={`p-2 rounded-xl transition-all ${
-                            quote.is_featured 
-                              ? 'bg-amber-100 text-amber-600 hover:bg-amber-200' 
-                              : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
-                          }`}
-                          title={quote.is_featured ? "Remove from featured" : "Mark as featured"}
-                        >
-                          <Star size={18} className={quote.is_featured ? 'fill-amber-500' : ''} />
-                        </button>
-                        <button
-                          onClick={() => handleEdit(quote)}
-                          className="p-2 bg-blue-100 text-blue-600 rounded-xl hover:bg-blue-200 transition-all"
-                          title="Edit quote"
-                        >
-                          <Edit2 size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(quote.id)}
-                          className="p-2 bg-red-100 text-red-600 rounded-xl hover:bg-red-200 transition-all"
-                          title="Delete quote"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
+                    <div className="w-5 h-5 rounded border border-white/20 bg-gray-900/50 peer-checked:bg-cyan-500 peer-checked:border-cyan-400 flex items-center justify-center transition-colors">
+                      <Check size={14} className="text-white opacity-0 peer-checked:opacity-100 transition-opacity" />
                     </div>
-                  </div>
-                ))}
+                    <span className="text-[10px] font-mono tracking-widest uppercase text-gray-400 group-hover:text-cyan-400 transition-colors">Flag as Priority (Featured)</span>
+                  </label>
+                </div>
               </div>
-            )}
+
+              <div className="flex flex-col sm:flex-row gap-4 pt-6 mt-6 border-t border-white/5">
+                <button
+                  onClick={() => {
+                    resetForm();
+                    setShowForm(false);
+                  }}
+                  className="w-full sm:w-auto px-8 py-4 bg-gray-900/50 text-gray-400 border border-white/10 rounded-xl font-semibold hover:bg-gray-800 transition-all text-xs tracking-widest uppercase order-2 sm:order-1"
+                >
+                  Discard
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  className="w-full sm:w-auto flex-1 dash-btn px-8 py-4 rounded-xl text-xs font-semibold tracking-widest uppercase hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_15px_rgba(34,211,238,0.2)] order-1 sm:order-2"
+                >
+                  {editingId ? 'Compile Changes' : 'Execute Injection'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="dash-glass rounded-3xl p-6 sm:p-8">
+          <div className="flex items-center justify-between mb-8 pb-4 border-b border-white/5">
+            <h2 className="text-xl font-bold text-gray-200">Database Entries <span className="text-cyan-500/60 font-mono text-xs ml-2">[{quotes.length}]</span></h2>
           </div>
 
+          {quotes.length === 0 ? (
+            <div className="text-center py-16 px-4 bg-gray-900/30 rounded-2xl border border-white/5">
+              <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner border border-gray-700">
+                <Quote className="text-gray-500" size={24} />
+              </div>
+              <p className="text-gray-300 font-bold text-xl mb-2">Registry Void</p>
+              <p className="text-gray-500 font-mono text-[10px] tracking-widest uppercase max-w-sm mx-auto">Click "Append Record" to ingest textual data into the mainframe</p>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2">
+              {quotes.map((quote) => (
+                <div
+                  key={quote.id}
+                  className="p-5 sm:p-6 bg-gray-900/60 rounded-2xl border border-white/5 hover:border-cyan-500/30 hover:shadow-[0_0_20px_rgba(34,211,238,0.1)] transition-all group flex flex-col justify-between"
+                >
+                  <div>
+                    {/* Tags */}
+                    <div className="flex items-center gap-2 mb-4 flex-wrap">
+                      <span className={`px-2.5 py-1 rounded-md text-[9px] font-mono tracking-widest uppercase border ${getCategoryColor(quote.category)}`}>
+                        {quote.category}
+                      </span>
+                      <span className="px-2.5 py-1 rounded-md text-[9px] font-mono tracking-widest uppercase bg-gray-800 border border-gray-700 text-gray-400 flex items-center gap-1.5 hover:border-gray-500 transition-colors">
+                        {getSourceIcon(quote.source)}
+                        {quote.source}
+                      </span>
+                      <span className="px-2.5 py-1 rounded-md text-[9px] font-mono tracking-widest uppercase bg-gray-800 border border-gray-700 text-gray-400 hover:border-gray-500 transition-colors">
+                        M: {quote.mood}
+                      </span>
+                      {quote.is_featured && (
+                        <span className="px-2.5 py-1 rounded-md text-[9px] font-mono tracking-widest uppercase bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center gap-1.5 shadow-[0_0_10px_rgba(251,191,36,0.1)]">
+                          <Star size={10} className="fill-amber-400" />
+                          Featured
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Content */}
+                    <p className="text-base sm:text-lg text-gray-300 font-light mb-4 leading-relaxed group-hover:text-white transition-colors relative z-10">"{quote.quote_text}"</p>
+
+                    {quote.author && (
+                      <p className="text-xs font-mono tracking-widest uppercase text-cyan-500/80 mb-4">— {quote.author}</p>
+                    )}
+                  </div>
+
+                  {/* Footer */}
+                  <div className="flex items-end justify-between mt-4 pt-4 border-t border-white/5">
+                    <p className="text-[10px] font-mono text-gray-600">
+                      ID: {quote.id.substring(0, 8)} | {' '}
+                      {new Date(quote.created_at).toLocaleDateString()}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => toggleFeatured(quote)}
+                        className={`p-2 rounded-lg transition-all border ${quote.is_featured
+                            ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20'
+                            : 'bg-gray-800 text-gray-500 border-gray-700 hover:bg-gray-700 hover:text-amber-400'
+                          }`}
+                        title={quote.is_featured ? "Nullify Priority" : "Elevate Priority"}
+                      >
+                        <Star size={14} className={quote.is_featured ? 'fill-amber-400' : ''} />
+                      </button>
+                      <button
+                        onClick={() => handleEdit(quote)}
+                        className="p-2 bg-gray-800 text-cyan-400 border border-gray-700 rounded-lg hover:bg-cyan-500/10 hover:border-cyan-500/30 transition-all"
+                        title="Configure Record"
+                      >
+                        <Edit2 size={14} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(quote.id)}
+                        className="p-2 bg-gray-800 text-rose-400 border border-gray-700 rounded-lg hover:bg-rose-500/10 hover:border-rose-500/30 transition-all"
+                        title="Eradicate Record"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
+
       </div>
     </div>
   );

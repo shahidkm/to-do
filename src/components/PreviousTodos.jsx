@@ -46,7 +46,7 @@ export default function PreviousTodos() {
       });
 
       setTodosByDate(grouped);
-      
+
       // Auto-expand the most recent date
       const dates = Object.keys(grouped);
       if (dates.length > 0) {
@@ -63,12 +63,12 @@ export default function PreviousTodos() {
     if (!confirm('This will recalculate performance data for all previous dates. This may take a while. Continue?')) {
       return;
     }
-    
+
     setRecalculating(true);
-    
+
     try {
       const dates = Object.keys(todosByDate).sort((a, b) => a.localeCompare(b));
-      
+
       let processed = 0;
       let failed = 0;
 
@@ -78,7 +78,7 @@ export default function PreviousTodos() {
           setRecalculatingDate(dateStr);
           await recalculateSpecificDate(dateStr);
           processed++;
-          
+
           // Small delay to prevent rate limiting
           await new Promise(resolve => setTimeout(resolve, 100));
         } catch (err) {
@@ -92,7 +92,7 @@ export default function PreviousTodos() {
       console.error("Error in bulk recalculation:", error);
       alert('Failed to recalculate all data: ' + error.message);
     }
-    
+
     setRecalculating(false);
     setRecalculatingDate(null);
   };
@@ -132,12 +132,12 @@ export default function PreviousTodos() {
       // Update local state
       const updatedTodosByDate = { ...todosByDate };
       updatedTodosByDate[dateKey] = updatedTodosByDate[dateKey].filter(t => t.id !== id);
-      
+
       // Remove date group if empty
       if (updatedTodosByDate[dateKey].length === 0) {
         delete updatedTodosByDate[dateKey];
       }
-      
+
       setTodosByDate(updatedTodosByDate);
     } catch (error) {
       console.error("Error deleting todo:", error);
@@ -190,7 +190,7 @@ export default function PreviousTodos() {
   const recalculateSpecificDate = async (dateStr) => {
     setRecalculating(true);
     setRecalculatingDate(dateStr);
-    
+
     try {
       const { data: todos, error } = await supabase
         .from('ToDo')
@@ -288,13 +288,13 @@ export default function PreviousTodos() {
             reason: `Auto-calculated: ${completed}/${total} tasks completed (${percentage.toFixed(0)}%)`
           });
       }
-      
+
       alert(`✅ Performance recalculated!\n\nDate: ${new Date(dateStr).toLocaleDateString()}\nScore: ${autoPoints}/10\nCompleted: ${completed}/${total} tasks (${percentage.toFixed(0)}%)\nStatus: ${status.toUpperCase()}`);
     } catch (error) {
       console.error("Error recalculating date:", error);
       alert('Failed to recalculate: ' + error.message);
     }
-    
+
     setRecalculating(false);
     setRecalculatingDate(null);
   };
@@ -328,7 +328,7 @@ export default function PreviousTodos() {
   const dates = Object.keys(todosByDate).sort((a, b) => b.localeCompare(a));
 
   return (
-    <div>
+    <div className="animate-slideIn" style={{ animationDelay: '0.1s' }}>
       <Navbar />
 
       <style>{`
@@ -356,249 +356,289 @@ export default function PreviousTodos() {
           animation: float 3s ease-in-out infinite;
         }
         
-        .glass-card {
-          background: rgba(255, 255, 255, 0.7);
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(255, 255, 255, 0.3);
+        .dash-glass {
+          background: rgba(15, 23, 42, 0.6);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+        
+        .dash-input {
+          background: rgba(30, 41, 59, 0.5);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          color: #e2e8f0;
+          transition: all 0.3s ease;
+        }
+        
+        .dash-input:focus {
+          border-color: rgba(99, 102, 241, 0.5);
+          box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
+          outline: none;
+        }
+        
+        .dash-btn {
+          background: linear-gradient(to right, rgba(99, 102, 241, 0.8), rgba(168, 85, 247, 0.8));
+          color: white;
+          border: 1px solid rgba(99, 102, 241, 0.5);
+          transition: all 0.3s ease;
+        }
+        
+        .dash-btn:hover {
+          background: linear-gradient(to right, rgba(99, 102, 241, 1), rgba(168, 85, 247, 1));
+          box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
         }
       `}</style>
 
-      <div className="min-h-screen bg-gradient-to-br from-blue-100 via-sky-50 to-indigo-100 py-8 px-4">
-        <div className="max-w-3xl mx-auto">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-          {/* Header */}
-          <div className="glass-card rounded-3xl p-6 mb-6 slide-in">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
-                  <Clock className="text-white" size={24} />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                    Previous Tasks
-                  </h1>
-                  <p className="text-sm text-gray-500 mt-1">Review and manage your past todos</p>
-                </div>
+        {/* Header */}
+        <div className="dash-glass rounded-3xl p-6 mb-6 slide-in">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl border border-indigo-500/30 flex items-center justify-center text-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.2)] bg-gray-900/50">
+                <Clock size={24} />
               </div>
-              
-              {/* Bulk Recalculate Button */}
-              {Object.keys(todosByDate).length > 0 && (
-                <button
-                  onClick={recalculateAllPreviousDates}
-                  disabled={recalculating}
-                  className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-xl hover:from-purple-600 hover:to-indigo-700 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {recalculating ? (
-                    <>
-                      <RefreshCw className="animate-spin" size={20} />
-                      <span className="font-semibold text-sm">Recalculating...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Zap size={20} />
-                      <span className="font-semibold text-sm">Recalculate All</span>
-                    </>
-                  )}
-                </button>
-              )}
+              <div>
+                <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-gray-100 via-white to-gray-400 tracking-tight">
+                  Archive Logs
+                </h1>
+                <p className="text-indigo-400/60 font-mono text-xs sm:text-sm tracking-widest uppercase mt-1">
+                  Historical Operation Data
+                </p>
+              </div>
+            </div>
+
+            {/* Bulk Recalculate Button */}
+            {Object.keys(todosByDate).length > 0 && (
+              <button
+                onClick={recalculateAllPreviousDates}
+                disabled={recalculating}
+                className="w-full sm:w-auto dash-btn px-5 py-3 flex items-center justify-center gap-2 rounded-xl text-xs font-semibold tracking-widest uppercase disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-95 transition-all"
+              >
+                {recalculating ? (
+                  <>
+                    <RefreshCw className="animate-spin text-white" size={16} />
+                    <span>Resolving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Zap size={16} className="text-white" />
+                    <span>Sync All Telemetry</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Info Banner */}
+        {Object.keys(todosByDate).length > 0 && (
+          <div className="dash-glass rounded-2xl p-5 mb-8 border border-indigo-500/20 slide-in relative overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-purple-500/5 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-1000"></div>
+            <div className="flex items-start gap-4 relative z-10">
+              <div className="p-2.5 bg-indigo-500/10 border border-indigo-500/30 rounded-xl flex-shrink-0">
+                <Sparkles className="text-indigo-400" size={20} />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-gray-200 mb-1 flex items-center gap-2">
+                  Telemetry Synchronization
+                  <span className="px-2 py-0.5 rounded text-[9px] font-mono tracking-wider uppercase border bg-indigo-500/10 text-indigo-400 border-indigo-500/30">Admin Notice</span>
+                </h3>
+                <p className="text-xs text-gray-400 leading-relaxed font-light">
+                  Following entity modification, initialize <RefreshCw className="inline w-3 h-3 mx-1 text-indigo-400" /> on targeted dates to sync metrics. Use <strong>Sync All Telemetry</strong> to run a global batch process updating all historical values in the Performance Dashboard.
+                </p>
+              </div>
             </div>
           </div>
+        )}
 
-          {/* Info Banner */}
-          {Object.keys(todosByDate).length > 0 && (
-            <div className="glass-card rounded-2xl p-5 mb-6 border-2 border-purple-200 slide-in">
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-purple-100 rounded-lg flex-shrink-0">
-                  <Sparkles className="text-purple-600" size={20} />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-gray-800 mb-1">Performance Recalculation</h3>
-                  <p className="text-xs text-gray-600 leading-relaxed">
-                    After editing or deleting tasks, click the <RefreshCw className="inline w-3 h-3 mx-1" /> button on any date to update its performance metrics, or use <strong>Recalculate All</strong> to update all previous dates at once. This will refresh completion rates, scores, and status for the Performance Dashboard.
-                  </p>
-                </div>
-              </div>
+        {/* Content */}
+        {loading ? (
+          <div className="dash-glass rounded-3xl p-16 text-center slide-in mt-8">
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin shadow-[0_0_15px_rgba(99,102,241,0.5)]"></div>
+              <div className="text-indigo-400 font-mono text-xs tracking-widest uppercase animate-pulse">Decrypting Logs...</div>
             </div>
-          )}
+          </div>
+        ) : dates.length === 0 ? (
+          <div className="dash-glass rounded-3xl p-16 text-center slide-in mt-8 border border-white/5">
+            <div className="w-20 h-20 bg-gray-900/50 border border-white/10 rounded-full flex items-center justify-center mx-auto mb-6 float-animation shadow-inner">
+              <Calendar className="text-gray-500" size={32} />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-300 mb-2">Archive Empty</h3>
+            <p className="text-gray-500 font-mono text-[10px] tracking-widest uppercase mb-4 max-w-sm mx-auto">
+              No historical data available. Active operations will log here post-cycle.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {dates.map((dateKey, index) => {
+              const todos = todosByDate[dateKey];
+              const stats = getDateStats(todos);
+              const isExpanded = expandedDates[dateKey];
 
-          {/* Content */}
-          {loading ? (
-            <div className="glass-card rounded-3xl p-12 text-center slide-in">
-              <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-400 text-sm">Loading previous tasks...</p>
-            </div>
-          ) : dates.length === 0 ? (
-            <div className="glass-card rounded-3xl p-12 text-center slide-in">
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4 float-animation">
-                <Calendar className="text-blue-400" size={32} />
-              </div>
-              <p className="text-gray-400 text-lg font-medium mb-2">No Previous Tasks</p>
-              <p className="text-gray-300 text-sm">Start adding tasks to see your history here</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {dates.map((dateKey, index) => {
-                const todos = todosByDate[dateKey];
-                const stats = getDateStats(todos);
-                const isExpanded = expandedDates[dateKey];
+              return (
+                <div key={dateKey} className="dash-glass rounded-3xl overflow-hidden slide-in border hover:border-indigo-500/30 transition-colors duration-500" style={{ animationDelay: `${index * 0.1}s` }}>
+                  {/* Date Header */}
+                  <button
+                    onClick={() => toggleDateExpansion(dateKey)}
+                    className="w-full px-5 py-5 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between hover:bg-white/5 transition-all group gap-4 sm:gap-0"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl border border-indigo-500/20 bg-indigo-500/10 flex items-center justify-center shadow-lg group-hover:bg-indigo-500/20 transition-colors">
+                        <Calendar className="text-indigo-400 group-hover:text-indigo-300 transition-colors" size={20} />
+                      </div>
+                      <div className="text-left">
+                        <h3 className="text-lg font-bold text-gray-200 group-hover:text-indigo-300 transition-colors">
+                          {formatDate(dateKey)}
+                        </h3>
+                        <p className="text-xs font-mono text-gray-500 mt-0.5 tracking-wide">
+                          Yield: <span className="text-gray-400">{stats.completed}/{stats.total}</span> <span className="text-indigo-500/50 px-1">•</span> <span className="text-indigo-400">{stats.percentage}%</span>
+                        </p>
+                      </div>
+                    </div>
 
-                return (
-                  <div key={dateKey} className="glass-card rounded-3xl overflow-hidden slide-in" style={{ animationDelay: `${index * 0.1}s` }}>
-                    {/* Date Header */}
-                    <button
-                      onClick={() => toggleDateExpansion(dateKey)}
-                      className="w-full px-6 py-5 flex items-center justify-between hover:bg-white/50 transition-all group"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                          <Calendar className="text-white" size={20} />
-                        </div>
-                        <div className="text-left">
-                          <h3 className="text-lg font-bold text-gray-800">
-                            {formatDate(dateKey)}
-                          </h3>
-                          <p className="text-sm text-gray-500">
-                            {stats.completed}/{stats.total} completed · {stats.percentage}%
-                          </p>
+                    <div className="flex items-center gap-4 self-end sm:self-auto">
+                      {/* Recalculate Button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          recalculateSpecificDate(dateKey);
+                        }}
+                        disabled={recalculating && recalculatingDate === dateKey}
+                        className="p-2.5 dash-btn rounded-xl text-white transition-all transform hover:scale-110 shadow-[0_0_10px_rgba(99,102,241,0.2)] disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Sync Telemetry"
+                      >
+                        <RefreshCw
+                          size={16}
+                          className={recalculating && recalculatingDate === dateKey ? 'animate-spin' : ''}
+                        />
+                      </button>
+
+                      {/* Mini Progress Ring */}
+                      <div className="relative w-12 h-12 drop-shadow-[0_0_5px_rgba(99,102,241,0.2)]">
+                        <svg className="transform -rotate-90 w-12 h-12">
+                          <circle
+                            cx="24"
+                            cy="24"
+                            r="18"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            fill="none"
+                            className="text-gray-800"
+                          />
+                          <circle
+                            cx="24"
+                            cy="24"
+                            r="18"
+                            stroke="url(#gradientDark-${dateKey})"
+                            strokeWidth="3"
+                            fill="none"
+                            strokeDasharray={`${2 * Math.PI * 18}`}
+                            strokeDashoffset={`${2 * Math.PI * 18 * (1 - stats.percentage / 100)}`}
+                            strokeLinecap="round"
+                          />
+                          <defs>
+                            <linearGradient id={`gradientDark-${dateKey}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                              <stop offset="0%" stopColor="#818cf8" />
+                              <stop offset="100%" stopColor="#c084fc" />
+                            </linearGradient>
+                          </defs>
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-[10px] font-bold text-indigo-300">{stats.percentage}</span>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-4">
-                        {/* Recalculate Button */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            recalculateSpecificDate(dateKey);
-                          }}
-                          disabled={recalculating && recalculatingDate === dateKey}
-                          className="p-2.5 bg-gradient-to-br from-purple-500 to-indigo-600 text-white rounded-xl hover:from-purple-600 hover:to-indigo-700 transition-all transform hover:scale-110 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                          title="Recalculate performance for this date"
-                        >
-                          <RefreshCw 
-                            size={18} 
-                            className={recalculating && recalculatingDate === dateKey ? 'animate-spin' : ''} 
-                          />
-                        </button>
-
-                        {/* Mini Progress Ring */}
-                        <div className="relative w-12 h-12">
-                          <svg className="transform -rotate-90 w-12 h-12">
-                            <circle
-                              cx="24"
-                              cy="24"
-                              r="18"
-                              stroke="currentColor"
-                              strokeWidth="4"
-                              fill="none"
-                              className="text-blue-100"
-                            />
-                            <circle
-                              cx="24"
-                              cy="24"
-                              r="18"
-                              stroke="url(#gradient-${dateKey})"
-                              strokeWidth="4"
-                              fill="none"
-                              strokeDasharray={`${2 * Math.PI * 18}`}
-                              strokeDashoffset={`${2 * Math.PI * 18 * (1 - stats.percentage / 100)}`}
-                              strokeLinecap="round"
-                            />
-                            <defs>
-                              <linearGradient id={`gradient-${dateKey}`} x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stopColor="#3B82F6" />
-                                <stop offset="100%" stopColor="#6366F1" />
-                              </linearGradient>
-                            </defs>
-                          </svg>
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="text-xs font-bold text-blue-600">{stats.percentage}</span>
-                          </div>
-                        </div>
-
+                      <div className="p-1 bg-gray-900/50 rounded-lg border border-white/5 group-hover:border-indigo-500/20 transition-colors">
                         {isExpanded ? (
-                          <ChevronUp className="text-gray-400" size={24} />
+                          <ChevronUp className="text-indigo-400" size={20} />
                         ) : (
-                          <ChevronDown className="text-gray-400" size={24} />
+                          <ChevronDown className="text-gray-500 group-hover:text-indigo-400" size={20} />
                         )}
                       </div>
-                    </button>
+                    </div>
+                  </button>
 
-                    {/* Tasks List */}
-                    {isExpanded && (
-                      <div className="px-6 pb-5 space-y-2 border-t border-gray-100">
-                        {todos.map((todo, todoIndex) => (
-                          <div key={todo.id} className="slide-in" style={{ animationDelay: `${todoIndex * 0.05}s` }}>
-                            {editingId === todo.id ? (
-                              <div className="flex items-center gap-2 py-3 px-3 bg-blue-50/50 rounded-xl mt-2">
-                                <input
-                                  value={editText}
-                                  onChange={(e) => setEditText(e.target.value)}
-                                  className="flex-1 px-4 py-2.5 border-2 border-blue-300 rounded-xl text-sm focus:outline-none focus:border-blue-400 bg-white"
-                                  autoFocus
-                                />
+                  {/* Tasks List */}
+                  {isExpanded && (
+                    <div className="px-4 sm:px-6 pb-6 pt-2 space-y-3 border-t border-white/5 bg-gray-900/40">
+                      {todos.map((todo, todoIndex) => (
+                        <div key={todo.id} className="slide-in" style={{ animationDelay: `${todoIndex * 0.05}s` }}>
+                          {editingId === todo.id ? (
+                            <div className="flex flex-col sm:flex-row items-center gap-3 py-3 px-4 bg-indigo-900/20 border border-indigo-500/30 rounded-xl mt-2 relative overflow-hidden">
+                              <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 via-indigo-500/5 to-indigo-500/0"></div>
+                              <input
+                                value={editText}
+                                onChange={(e) => setEditText(e.target.value)}
+                                className="w-full sm:flex-1 px-4 py-2.5 dash-input rounded-xl text-sm focus:border-indigo-500 relative z-10"
+                                autoFocus
+                              />
+                              <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0 relative z-10">
                                 <button
                                   onClick={() => handleEdit(todo.id, dateKey)}
-                                  className="p-2.5 bg-green-500 hover:bg-green-600 rounded-xl text-white transition-all transform hover:scale-110 shadow-md"
+                                  className="flex-1 sm:flex-none p-2.5 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 rounded-xl text-emerald-400 transition-all flex justify-center items-center"
                                 >
                                   <Check size={18} />
                                 </button>
                                 <button
                                   onClick={cancelEdit}
-                                  className="p-2.5 bg-red-500 hover:bg-red-600 rounded-xl text-white transition-all transform hover:scale-110 shadow-md"
+                                  className="flex-1 sm:flex-none p-2.5 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/30 rounded-xl text-rose-400 transition-all flex justify-center items-center"
                                 >
                                   <X size={18} />
                                 </button>
                               </div>
-                            ) : (
-                              <div className="group flex items-center gap-3 py-3 px-3 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 rounded-xl transition-all mt-2">
-                                <button
-                                  onClick={() => handleToggle(todo.id, todo.completed)}
-                                  className={`relative flex-shrink-0 w-7 h-7 rounded-lg border-2 transition-all transform hover:scale-110 ${
-                                    todo.completed
-                                      ? 'bg-gradient-to-br from-blue-500 to-indigo-600 border-blue-500 shadow-lg'
-                                      : 'border-gray-300 hover:border-blue-400 bg-white shadow-sm'
+                            </div>
+                          ) : (
+                            <div className="group flex flex-row items-center gap-3 py-3 px-4 bg-gray-900/60 border border-white/5 hover:border-indigo-500/30 rounded-xl transition-all mt-2 overflow-hidden hover:shadow-[0_0_15px_rgba(99,102,241,0.1)]">
+                              <button
+                                onClick={() => handleToggle(todo.id, todo.completed)}
+                                className={`relative flex-shrink-0 w-6 h-6 rounded border transition-all ${todo.completed
+                                    ? 'bg-indigo-500/20 border-indigo-500 text-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.3)]'
+                                    : 'bg-gray-800 border-gray-600 hover:border-indigo-400'
                                   }`}
-                                >
-                                  {todo.completed && (
-                                    <Check size={18} className="text-white absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" strokeWidth={3} />
-                                  )}
-                                </button>
+                              >
+                                {todo.completed && (
+                                  <Check size={14} className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" strokeWidth={3} />
+                                )}
+                              </button>
 
-                                <span className={`flex-1 text-sm transition-all ${
-                                  todo.completed
-                                    ? 'line-through text-gray-400'
-                                    : 'text-gray-700 font-medium group-hover:text-blue-600'
+                              <span className={`flex-1 text-sm transition-all sm:truncate ${todo.completed
+                                  ? 'line-through text-gray-600'
+                                  : 'text-gray-300 font-medium group-hover:text-indigo-200'
                                 }`}>
-                                  {todo.title}
-                                </span>
+                                {todo.title}
+                              </span>
 
-                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <button
-                                    onClick={() => startEdit(todo.id, todo.title)}
-                                    className="p-2 bg-blue-100 hover:bg-blue-200 rounded-lg text-blue-600 transition-all transform hover:scale-110"
-                                  >
-                                    <Edit2 size={16} />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDelete(todo.id, dateKey)}
-                                    className="p-2 bg-red-100 hover:bg-red-200 rounded-lg text-red-600 transition-all transform hover:scale-110"
-                                  >
-                                    <Trash2 size={16} />
-                                  </button>
-                                </div>
+                              <div className="flex gap-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity self-start sm:self-auto shrink-0">
+                                <button
+                                  onClick={() => startEdit(todo.id, todo.title)}
+                                  className="p-2 bg-indigo-500/10 hover:bg-indigo-500/30 border border-transparent hover:border-indigo-500/30 rounded-lg text-indigo-400 transition-all"
+                                  title="Configure"
+                                >
+                                  <Edit2 size={14} />
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(todo.id, dateKey)}
+                                  className="p-2 bg-rose-500/10 hover:bg-rose-500/30 border border-transparent hover:border-rose-500/30 rounded-lg text-rose-400 transition-all"
+                                  title="Eradicate"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
                               </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
 
-        </div>
       </div>
     </div>
   );

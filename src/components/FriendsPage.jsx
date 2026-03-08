@@ -28,51 +28,56 @@ const PRIORITY_LEVELS = [
     level: 1,
     label: "Best Friend",
     icon: Crown,
-    color: "from-purple-500 to-pink-500",
-    bgColor: "from-purple-50 to-pink-50",
-    textColor: "text-purple-600",
-    borderColor: "border-purple-200",
+    color: "from-fuchsia-500 to-pink-500",
+    bgColor: "from-fuchsia-500/10 to-pink-500/10",
+    textColor: "text-fuchsia-400",
+    borderColor: "border-fuchsia-500/30",
     description: "Your closest companions",
+    glow: "shadow-[0_0_15px_rgba(217,70,239,0.3)]"
   },
   {
     level: 2,
     label: "Close Friend",
     icon: Heart,
     color: "from-rose-500 to-red-500",
-    bgColor: "from-rose-50 to-red-50",
-    textColor: "text-rose-600",
-    borderColor: "border-rose-200",
+    bgColor: "from-rose-500/10 to-red-500/10",
+    textColor: "text-rose-400",
+    borderColor: "border-rose-500/30",
     description: "Very important people",
+    glow: "shadow-[0_0_15px_rgba(244,63,94,0.3)]"
   },
   {
     level: 3,
     label: "Good Friend",
     icon: Star,
     color: "from-amber-500 to-orange-500",
-    bgColor: "from-amber-50 to-orange-50",
-    textColor: "text-amber-600",
-    borderColor: "border-amber-200",
+    bgColor: "from-amber-500/10 to-orange-500/10",
+    textColor: "text-amber-400",
+    borderColor: "border-amber-500/30",
     description: "Regular hangout buddies",
+    glow: "shadow-[0_0_15px_rgba(245,158,11,0.3)]"
   },
   {
     level: 4,
     label: "Friend",
     icon: Award,
-    color: "from-blue-500 to-cyan-500",
-    bgColor: "from-blue-50 to-cyan-50",
-    textColor: "text-blue-600",
-    borderColor: "border-blue-200",
+    color: "from-cyan-500 to-blue-500",
+    bgColor: "from-cyan-500/10 to-blue-500/10",
+    textColor: "text-cyan-400",
+    borderColor: "border-cyan-500/30",
     description: "Friends you see occasionally",
+    glow: "shadow-[0_0_15px_rgba(6,182,212,0.3)]"
   },
   {
     level: 5,
     label: "Acquaintance",
     icon: Zap,
-    color: "from-slate-500 to-gray-500",
-    bgColor: "from-slate-50 to-gray-50",
-    textColor: "text-slate-600",
-    borderColor: "border-slate-200",
+    color: "from-slate-400 to-gray-500",
+    bgColor: "from-slate-500/10 to-gray-500/10",
+    textColor: "text-slate-400",
+    borderColor: "border-slate-500/30",
     description: "People you know",
+    glow: "shadow-[0_0_15px_rgba(148,163,184,0.2)]"
   },
 ];
 
@@ -145,8 +150,6 @@ export default function FriendsPage() {
     setLoading(false);
   }
 
-
-
   function editFriend(friend) {
     setEditingFriend(friend);
     setForm({
@@ -168,10 +171,6 @@ export default function FriendsPage() {
     setEditingFriend(null);
     setFormOpen(false);
   }
-
-  const getPriorityInfo = (level) => {
-    return PRIORITY_LEVELS.find((p) => p.level === level) || PRIORITY_LEVELS[2];
-  };
 
   const filteredFriends = friends.filter((friend) => {
     const matchesSearch = friend.name
@@ -198,52 +197,86 @@ export default function FriendsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-purple-50 to-pink-50">
+    <div className="animate-slideIn" style={{ animationDelay: '0.1s' }}>
       <Navbar />
+      <style>{`
+        .dash-glass {
+          background: rgba(15, 23, 42, 0.6);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+        .dash-input {
+          background: rgba(30, 41, 59, 0.5);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          color: #e2e8f0;
+          transition: all 0.3s ease;
+        }
+        .dash-input:focus {
+          border-color: rgba(217, 70, 239, 0.5);
+          box-shadow: 0 0 10px rgba(217, 70, 239, 0.2);
+          outline: none;
+        }
+        .dash-btn {
+          background: linear-gradient(to right, rgba(217, 70, 239, 0.8), rgba(236, 72, 153, 0.8));
+          color: white;
+          border: 1px solid rgba(217, 70, 239, 0.5);
+          transition: all 0.3s ease;
+        }
+        .dash-btn:hover {
+          background: linear-gradient(to right, rgba(217, 70, 239, 1), rgba(236, 72, 153, 1));
+          box-shadow: 0 0 15px rgba(217, 70, 239, 0.4);
+        }
+      `}</style>
+
 
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8 md:py-12">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 sm:mb-10 md:mb-12 gap-4 sm:gap-6">
-          <div className="flex-1">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 sm:mb-10 md:mb-12 gap-4 sm:gap-6 relative">
+          <div className="flex-1 z-10">
             <div className="flex items-center gap-3 sm:gap-4 mb-2">
-              <div className="p-2 sm:p-2.5 md:p-3 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl sm:rounded-2xl shadow-lg sm:shadow-xl">
-                <Users className="text-white w-6 h-6 sm:w-8 sm:h-8 md:w-9 md:h-9" />
+              <div className="p-2 sm:p-2.5 md:p-3 dash-glass rounded-xl sm:rounded-2xl border border-fuchsia-500/30 text-fuchsia-400 shadow-[0_0_20px_rgba(217,70,239,0.2)]">
+                <Users className="w-6 h-6 sm:w-8 sm:h-8 md:w-9 md:h-9" />
               </div>
               <div>
-                <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
-                  My Friends
+                <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-gray-100 via-white to-gray-400 tracking-tight">
+                  Network Directory
                 </h1>
-                <p className="text-slate-600 mt-0.5 sm:mt-1 text-sm sm:text-base md:text-lg">
-                  Manage your circle & priorities
+                <p className="text-fuchsia-400/60 font-mono text-xs sm:text-sm tracking-widest uppercase mt-0.5 sm:mt-1">
+                  Social Topology & Priority
                 </p>
               </div>
             </div>
           </div>
 
-          <button
-            onClick={() => {
-              resetForm();
-              setFormOpen(true);
-            }}
-            className="group relative inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-3 sm:py-3.5 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl hover:shadow-purple-500/30 transition-all duration-300 hover:scale-105 active:scale-95 text-sm sm:text-base"
-          >
-            <UserPlus size={18} className="sm:w-5 sm:h-5" />
-            <span>Add Friend</span>
-          </button>
+          <div className="z-10 mt-2 sm:mt-0">
+            <button
+              onClick={() => {
+                resetForm();
+                setFormOpen(true);
+              }}
+              className="w-full sm:w-auto dash-btn group relative inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl font-semibold transition-all duration-300 hover:scale-[1.02] active:scale-95 text-xs tracking-widest uppercase"
+            >
+              <UserPlus size={16} className="sm:w-4 sm:h-4 text-white group-hover:rotate-12 transition-transform" />
+              <span>Add Connection</span>
+            </button>
+          </div>
         </div>
 
         {/* Stats Overview */}
         {friends.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 md:gap-4 mb-6 sm:mb-8">
-            <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-lg border border-slate-200 col-span-2 sm:col-span-1">
-              <div className="flex flex-col gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 md:gap-4 mb-8 sm:mb-10">
+            <div className="dash-glass rounded-xl sm:rounded-2xl p-3 sm:p-4 relative overflow-hidden group col-span-2 sm:col-span-1">
+              <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-fuchsia-500/0 via-fuchsia-500 to-fuchsia-500/0 opacity-50"></div>
+              <div className="flex flex-col gap-2 relative z-10">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs sm:text-sm text-slate-600 font-medium">
-                    Total
+                  <p className="text-[10px] font-mono tracking-widest uppercase text-gray-500">
+                    Total Links
                   </p>
-                  <Users className="text-purple-500 w-4 h-4" />
+                  <Users className="text-fuchsia-400 w-4 h-4" />
                 </div>
-                <p className="text-2xl sm:text-3xl font-black text-slate-900">
+                <p className="text-2xl sm:text-3xl font-light text-fuchsia-400">
                   {stats.total}
                 </p>
               </div>
@@ -254,16 +287,17 @@ export default function FriendsPage() {
               return (
                 <div
                   key={priority.level}
-                  className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-lg border border-slate-200"
+                  className="dash-glass rounded-xl sm:rounded-2xl p-3 sm:p-4 relative overflow-hidden group border border-transparent hover:border-white/10 transition-colors"
                 >
-                  <div className="flex flex-col gap-2">
+                  <div className={`absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r ${priority.color} opacity-20 group-hover:opacity-50 transition-opacity`}></div>
+                  <div className="flex flex-col gap-2 relative z-10">
                     <div className="flex items-center justify-between">
-                      <p className="text-[10px] sm:text-xs text-slate-600 font-medium truncate">
+                      <p className="text-[9px] sm:text-[10px] font-mono tracking-widest uppercase text-gray-500 truncate">
                         {priority.label}
                       </p>
                       <Icon className={`${priority.textColor} w-3 h-3 sm:w-4 sm:h-4`} />
                     </div>
-                    <p className="text-xl sm:text-2xl font-black text-slate-900">
+                    <p className={`text-xl sm:text-2xl font-light ${priority.textColor}`}>
                       {priority.count}
                     </p>
                   </div>
@@ -275,34 +309,33 @@ export default function FriendsPage() {
 
         {/* Search and Filter */}
         {friends.length > 0 && (
-          <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 shadow-lg border border-slate-200 mb-6 sm:mb-8">
+          <div className="dash-glass rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 mb-8 sm:mb-10">
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               {/* Search */}
               <div className="flex-1 relative">
                 <Search
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
                   size={18}
                 />
                 <input
                   type="text"
-                  placeholder="Search friends..."
+                  placeholder="Query profiles..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 sm:py-3 bg-slate-50 border-2 border-slate-200 text-slate-900 rounded-lg sm:rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 outline-none transition-all text-sm sm:text-base"
+                  className="w-full pl-10 pr-4 py-2.5 sm:py-3 dash-input rounded-lg sm:rounded-xl text-sm sm:text-base font-mono placeholder-gray-600"
                 />
               </div>
 
               {/* Priority Filter */}
-              <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0">
+              <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0 scrollbar-hide">
                 <button
                   onClick={() => setSelectedPriority(null)}
-                  className={`shrink-0 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-semibold transition-all text-xs sm:text-sm ${
-                    selectedPriority === null
-                      ? "bg-gradient-to-r from-purple-500 to-pink-600 text-white shadow-lg"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  }`}
+                  className={`shrink-0 px-4 py-2.5 rounded-xl font-semibold transition-all text-xs tracking-widest uppercase border ${selectedPriority === null
+                      ? "bg-fuchsia-500/20 text-fuchsia-400 border-fuchsia-500/50 shadow-[0_0_10px_rgba(217,70,239,0.2)]"
+                      : "bg-gray-900/50 text-gray-500 border-white/10 hover:bg-gray-800"
+                    }`}
                 >
-                  All
+                  Global
                 </button>
                 {PRIORITY_LEVELS.map((priority) => {
                   const Icon = priority.icon;
@@ -310,15 +343,14 @@ export default function FriendsPage() {
                     <button
                       key={priority.level}
                       onClick={() => setSelectedPriority(priority.level)}
-                      className={`shrink-0 flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-semibold transition-all text-xs sm:text-sm ${
-                        selectedPriority === priority.level
-                          ? `bg-gradient-to-r ${priority.color} text-white shadow-lg`
-                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                      }`}
+                      className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold transition-all text-xs tracking-widest uppercase border ${selectedPriority === priority.level
+                          ? `${priority.bgColor} ${priority.textColor} ${priority.borderColor} ${priority.glow}`
+                          : "bg-gray-900/50 text-gray-500 border-white/10 hover:bg-gray-800"
+                        }`}
                     >
-                      <Icon size={14} className="sm:w-4 sm:h-4" />
+                      <Icon size={14} className={selectedPriority === priority.level ? priority.textColor : "text-gray-500"} />
                       <span className="hidden sm:inline">{priority.label}</span>
-                      <span className="sm:hidden">P{priority.level}</span>
+                      <span className="sm:hidden">Lvl {priority.level}</span>
                     </button>
                   );
                 })}
@@ -329,22 +361,22 @@ export default function FriendsPage() {
 
         {/* Form Modal */}
         {formOpen && (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200">
-            <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-2xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto shadow-2xl animate-in slide-in-from-bottom sm:slide-in-from-bottom-0 duration-300">
-              <div className="sticky top-0 bg-white border-b border-slate-200 p-4 sm:p-6 flex items-center justify-between z-10">
+          <div className="fixed inset-0 z-[150] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-md p-0 sm:p-4 shadow-2xl transition-all">
+            <div className="dash-glass rounded-t-3xl sm:rounded-3xl w-full max-w-2xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto animate-slideIn border-fuchsia-500/20">
+              <div className="sticky top-0 bg-gray-900/90 backdrop-blur-xl border-b border-white/5 p-4 sm:p-6 flex items-center justify-between z-10">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 sm:p-2.5 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl">
-                    <Sparkles className="text-white w-5 h-5 sm:w-6 sm:h-6" />
+                  <div className="p-2 sm:p-2.5 bg-fuchsia-900/30 border border-fuchsia-500/30 rounded-xl">
+                    <Sparkles className="text-fuchsia-400 w-5 h-5 sm:w-6 sm:h-6" />
                   </div>
-                  <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
-                    {editingFriend ? "Edit Friend" : "Add New Friend"}
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-200">
+                    {editingFriend ? "Modify Profile" : "Register Connection"}
                   </h2>
                 </div>
                 <button
                   onClick={resetForm}
-                  className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                  className="p-2 hover:bg-gray-800 rounded-lg transition-colors border border-transparent hover:border-white/10"
                 >
-                  <X size={24} className="text-slate-500" />
+                  <X size={20} className="text-gray-400" />
                 </button>
               </div>
 
@@ -353,15 +385,15 @@ export default function FriendsPage() {
                 <div>
                   <label
                     htmlFor="name"
-                    className="block text-sm font-semibold text-slate-700 mb-2"
+                    className="block text-[10px] font-mono tracking-widest uppercase text-gray-400 mb-2"
                   >
-                    Name *
+                    Designation *
                   </label>
                   <input
                     id="name"
                     type="text"
-                    placeholder="e.g., John Doe"
-                    className="w-full px-4 py-3 sm:py-3.5 bg-slate-50 border-2 border-slate-200 text-slate-900 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 outline-none transition-all text-sm sm:text-base"
+                    placeholder="e.g. Protocol Omega"
+                    className="w-full px-4 py-3 sm:py-3.5 dash-input rounded-xl focus:ring-1 focus:ring-fuchsia-500/50 text-sm sm:text-base placeholder-gray-600"
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                     required
@@ -372,15 +404,15 @@ export default function FriendsPage() {
                 <div>
                   <label
                     htmlFor="phone"
-                    className="block text-sm font-semibold text-slate-700 mb-2"
+                    className="block text-[10px] font-mono tracking-widest uppercase text-gray-400 mb-2"
                   >
-                    Phone Number
+                    Comms Frequency
                   </label>
                   <input
                     id="phone"
                     type="tel"
-                    placeholder="e.g., +1 234 567 8900"
-                    className="w-full px-4 py-3 sm:py-3.5 bg-slate-50 border-2 border-slate-200 text-slate-900 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 outline-none transition-all text-sm sm:text-base"
+                    placeholder="e.g. +1 555..."
+                    className="w-full px-4 py-3 sm:py-3.5 dash-input rounded-xl focus:ring-1 focus:ring-fuchsia-500/50 text-sm sm:text-base placeholder-gray-600"
                     value={form.phone}
                     onChange={(e) => setForm({ ...form, phone: e.target.value })}
                   />
@@ -390,15 +422,15 @@ export default function FriendsPage() {
                 <div>
                   <label
                     htmlFor="image_url"
-                    className="block text-sm font-semibold text-slate-700 mb-2"
+                    className="block text-[10px] font-mono tracking-widest uppercase text-gray-400 mb-2"
                   >
-                    Profile Image URL
+                    Visual Identifier URI
                   </label>
                   <input
                     id="image_url"
                     type="url"
-                    placeholder="https://example.com/image.jpg"
-                    className="w-full px-4 py-3 sm:py-3.5 bg-slate-50 border-2 border-slate-200 text-slate-900 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 outline-none transition-all text-sm sm:text-base"
+                    placeholder="https://..."
+                    className="w-full px-4 py-3 sm:py-3.5 dash-input rounded-xl focus:ring-1 focus:ring-fuchsia-500/50 text-sm sm:text-base placeholder-gray-600"
                     value={form.image_url}
                     onChange={(e) =>
                       setForm({ ...form, image_url: e.target.value })
@@ -408,8 +440,8 @@ export default function FriendsPage() {
 
                 {/* Priority Level */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-3">
-                    Priority Level *
+                  <label className="block text-[10px] font-mono tracking-widest uppercase text-gray-400 mb-3">
+                    Clearance Level *
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {PRIORITY_LEVELS.map((priority) => {
@@ -422,45 +454,42 @@ export default function FriendsPage() {
                           onClick={() =>
                             setForm({ ...form, priority_level: priority.level })
                           }
-                          className={`relative p-4 rounded-xl border-2 transition-all text-left ${
-                            isSelected
-                              ? `bg-gradient-to-br ${priority.bgColor} ${priority.borderColor} border-2 shadow-lg`
-                              : "bg-white border-slate-200 hover:border-slate-300"
-                          }`}
+                          className={`relative p-4 rounded-xl border transition-all text-left overflow-hidden group ${isSelected
+                              ? `bg-gray-900/60 ${priority.borderColor} ${priority.glow}`
+                              : "bg-gray-900/30 border-white/5 hover:border-white/20"
+                            }`}
                         >
-                          <div className="flex items-start gap-3">
+                          {isSelected && <div className={`absolute inset-0 bg-gradient-to-br ${priority.color} opacity-5`}></div>}
+                          <div className="flex items-start gap-3 relative z-10">
                             <div
-                              className={`p-2 rounded-lg ${
-                                isSelected
-                                  ? `bg-gradient-to-br ${priority.color}`
-                                  : "bg-slate-100"
-                              }`}
+                              className={`p-2 rounded-lg border ${isSelected
+                                  ? `${priority.bgColor} ${priority.borderColor}`
+                                  : "bg-gray-800 border-white/5"
+                                }`}
                             >
                               <Icon
-                                className={`${
-                                  isSelected ? "text-white" : "text-slate-400"
-                                }`}
+                                className={`${isSelected ? priority.textColor : "text-gray-500"
+                                  }`}
                                 size={20}
                               />
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between mb-1">
                                 <h4
-                                  className={`font-bold text-sm sm:text-base ${
-                                    isSelected
+                                  className={`font-bold text-sm sm:text-base ${isSelected
                                       ? priority.textColor
-                                      : "text-slate-900"
-                                  }`}
+                                      : "text-gray-300"
+                                    }`}
                                 >
                                   {priority.label}
                                 </h4>
                                 {isSelected && (
-                                  <div className="w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
-                                    <Star className="text-white" size={12} />
+                                  <div className="w-4 h-4 rounded-full border border-fuchsia-500/50 flex items-center justify-center">
+                                    <div className="w-2 h-2 rounded-full bg-fuchsia-400 shadow-[0_0_5px_#d946ef]"></div>
                                   </div>
                                 )}
                               </div>
-                              <p className="text-xs text-slate-600">
+                              <p className="text-[10px] font-mono tracking-wider text-gray-500">
                                 {priority.description}
                               </p>
                             </div>
@@ -471,24 +500,24 @@ export default function FriendsPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 pt-4">
+                <div className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 pt-6 border-t border-white/5">
                   <button
                     type="button"
                     onClick={resetForm}
-                    className="w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-all text-sm sm:text-base"
+                    className="w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 bg-gray-900/50 text-gray-400 border border-white/10 rounded-xl font-semibold hover:bg-gray-800 transition-all text-xs tracking-widest uppercase"
                   >
-                    Cancel
+                    Abort
                   </button>
                   <button
                     type="submit"
                     disabled={loading || !form.name.trim()}
-                    className="flex-1 py-3.5 sm:py-4 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl hover:shadow-purple-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-95 text-sm sm:text-base"
+                    className="flex-1 py-3.5 sm:py-4 dash-btn rounded-xl font-semibold shadow-[0_0_15px_rgba(217,70,239,0.2)] disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-95 text-xs tracking-widest uppercase transition-all"
                   >
                     {loading
-                      ? "Saving..."
+                      ? "Synchronizing..."
                       : editingFriend
-                      ? "Update Friend"
-                      : "Add Friend"}
+                        ? "Apply Patch"
+                        : "Establish Link"}
                   </button>
                 </div>
               </form>
@@ -499,24 +528,25 @@ export default function FriendsPage() {
         {/* Friends List */}
         {loading && friends.length === 0 ? (
           <div className="flex justify-center py-16 sm:py-20">
-            <div className="relative">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-purple-200 border-t-purple-500 rounded-full animate-spin"></div>
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-12 h-12 border-4 border-fuchsia-500/20 border-t-fuchsia-500 rounded-full animate-spin shadow-[0_0_15px_rgba(217,70,239,0.5)]"></div>
+              <div className="text-fuchsia-400 font-mono text-xs tracking-widest uppercase animate-pulse">Scanning Network...</div>
             </div>
           </div>
         ) : filteredFriends.length === 0 ? (
-          <div className="text-center py-12 sm:py-16 md:py-20 px-4">
-            <div className="inline-flex p-6 sm:p-8 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full mb-4 sm:mb-6">
-              <Users className="text-purple-600 w-12 h-12 sm:w-16 sm:h-16" />
+          <div className="text-center py-12 sm:py-16 md:py-20 px-4 dash-glass rounded-3xl mt-6">
+            <div className="inline-flex p-6 sm:p-8 bg-gray-900/50 border border-white/5 rounded-3xl mb-4 sm:mb-6">
+              <Users className="text-gray-600 w-12 h-12 sm:w-16 sm:h-16" />
             </div>
-            <h3 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2 sm:mb-3">
+            <h3 className="text-2xl sm:text-3xl font-bold text-gray-300 mb-2 sm:mb-3">
               {searchQuery || selectedPriority
-                ? "No friends found"
-                : "No friends yet"}
+                ? "No Matches Found"
+                : "Empty Directory"}
             </h3>
-            <p className="text-slate-600 mb-6 sm:mb-8 max-w-md mx-auto text-base sm:text-lg">
+            <p className="text-gray-500 font-mono text-[10px] tracking-widest uppercase mb-6 sm:mb-8 max-w-md mx-auto">
               {searchQuery || selectedPriority
-                ? "Try adjusting your search or filters"
-                : "Start building your friend list and set priorities"}
+                ? "Modify query parameters"
+                : "Awaiting initial node connections"}
             </p>
             {!searchQuery && !selectedPriority && (
               <button
@@ -524,15 +554,15 @@ export default function FriendsPage() {
                   resetForm();
                   setFormOpen(true);
                 }}
-                className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl hover:shadow-purple-500/30 transition-all hover:scale-105 text-sm sm:text-base"
+                className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-4 dash-btn rounded-xl font-bold transition-all hover:scale-105 text-xs uppercase tracking-widest"
               >
-                <UserPlus size={18} className="sm:w-5 sm:h-5" />
-                Add Your First Friend
+                <UserPlus size={16} className="sm:w-4 sm:h-4" />
+                Initialize First Link
               </button>
             )}
           </div>
         ) : (
-          <div className="space-y-6 sm:space-y-8">
+          <div className="space-y-8 sm:space-y-10">
             {PRIORITY_LEVELS.map((priority) => {
               const friendsInPriority = groupedFriends[priority.level] || [];
               if (friendsInPriority.length === 0) return null;
@@ -540,38 +570,40 @@ export default function FriendsPage() {
               const Icon = priority.icon;
 
               return (
-                <div key={priority.level}>
+                <div key={priority.level} className="relative">
+                  <div className={`absolute -left-4 top-0 bottom-0 w-1 bg-gradient-to-b ${priority.color} rounded-r-full opacity-50`}></div>
                   {/* Priority Header */}
-                  <div className="flex items-center gap-3 mb-4 sm:mb-5">
+                  <div className="flex items-center gap-4 mb-6 sm:mb-8 pl-2">
                     <div
-                      className={`p-2 sm:p-2.5 rounded-xl bg-gradient-to-br ${priority.color}`}
+                      className={`p-2.5 sm:p-3 rounded-xl border ${priority.bgColor} ${priority.borderColor} ${priority.glow}`}
                     >
-                      <Icon className="text-white w-5 h-5 sm:w-6 sm:h-6" />
+                      <Icon className={`${priority.textColor} w-5 h-5 sm:w-6 sm:h-6`} />
                     </div>
                     <div>
-                      <h3 className="text-xl sm:text-2xl font-bold text-slate-900">
-                        {priority.label}
+                      <h3 className={`text-xl sm:text-2xl font-black ${priority.textColor} tracking-wide uppercase`}>
+                        {priority.label} <span className="text-gray-600 ml-2">[{friendsInPriority.length}]</span>
                       </h3>
-                      <p className="text-xs sm:text-sm text-slate-600">
-                        {friendsInPriority.length}{" "}
-                        {friendsInPriority.length === 1 ? "friend" : "friends"}
-                      </p>
+                      <div className="w-16 h-1 mt-1 bg-gradient-to-r ${priority.color} opacity-30 rounded-full"></div>
                     </div>
                   </div>
 
                   {/* Friends Grid */}
-                  <div className="grid gap-3 sm:gap-4 md:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid gap-4 sm:gap-5 md:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 pl-2">
                     {friendsInPriority.map((friend) => (
                       <div
                         key={friend.id}
-                        className={`group bg-white rounded-xl sm:rounded-2xl overflow-hidden border-2 ${priority.borderColor} hover:shadow-xl transition-all duration-300 hover:-translate-y-1`}
+                        className={`group dash-glass rounded-2xl overflow-hidden border ${priority.borderColor} hover:shadow-xl transition-all duration-300 hover:-translate-y-1 hover:${priority.glow}`}
                       >
-                        <div className="p-4 sm:p-5 md:p-6">
+                        <div className="p-5 sm:p-6 relative">
+                          <div className={`absolute top-0 right-0 p-4 opacity-5 pointer-events-none transition-opacity group-hover:opacity-10 ${priority.textColor}`}>
+                            <Icon size={64} />
+                          </div>
+
                           {/* Friend Header */}
-                          <div className="flex items-start gap-3 sm:gap-4 mb-4">
+                          <div className="flex items-start gap-4 mb-5 relative z-10">
                             {/* Avatar */}
                             <div
-                              className={`relative shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br ${priority.color} flex items-center justify-center overflow-hidden ring-4 ring-white shadow-lg`}
+                              className={`relative shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center overflow-hidden border ${priority.borderColor} ${priority.bgColor} shadow-lg group-hover:scale-105 transition-transform`}
                             >
                               {friend.image_url ? (
                                 <img
@@ -583,36 +615,37 @@ export default function FriendsPage() {
                                   }}
                                 />
                               ) : (
-                                <span className="text-white text-xl sm:text-2xl font-bold">
+                                <span className={`text-xl sm:text-2xl font-black ${priority.textColor}`}>
                                   {friend.name.charAt(0).toUpperCase()}
                                 </span>
                               )}
                             </div>
 
                             {/* Name and Priority */}
-                            <div className="flex-1 min-w-0">
-                              <h4 className="text-base sm:text-lg font-bold text-slate-900 mb-1 truncate">
+                            <div className="flex-1 min-w-0 pt-1">
+                              <h4 className="text-lg sm:text-xl font-bold text-gray-200 mb-1 truncate group-hover:text-white transition-colors">
                                 {friend.name}
                               </h4>
                               <div
-                                className={`inline-flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full bg-gradient-to-r ${priority.color} text-white text-[10px] sm:text-xs font-bold shadow-md`}
+                                className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded border ${priority.bgColor} ${priority.borderColor} ${priority.textColor} text-[10px] font-mono tracking-widest uppercase shadow-sm`}
                               >
-                                <Icon size={10} className="sm:w-3 sm:h-3" />
-                                <span className="hidden xs:inline">
-                                  {priority.label}
+                                <Icon size={10} />
+                                <span>
+                                  Lvl {priority.level}
                                 </span>
-                                <span className="xs:hidden">P{priority.level}</span>
                               </div>
                             </div>
                           </div>
 
                           {/* Phone */}
                           {friend.phone && (
-                            <div className="flex items-center gap-2 mb-4 p-3 bg-slate-50 rounded-lg">
-                              <Phone className="text-slate-400 shrink-0" size={16} />
+                            <div className="flex items-center gap-3 mb-5 p-3 bg-gray-900/40 rounded-xl border border-white/5 relative z-10">
+                              <div className="p-1.5 bg-gray-800 rounded-md border border-gray-700">
+                                <Phone className="text-gray-400" size={14} />
+                              </div>
                               <a
                                 href={`tel:${friend.phone}`}
-                                className="text-sm text-slate-700 hover:text-purple-600 transition-colors truncate font-medium"
+                                className="text-sm font-mono text-gray-300 hover:text-cyan-400 transition-colors truncate tracking-wide"
                               >
                                 {friend.phone}
                               </a>
@@ -620,13 +653,13 @@ export default function FriendsPage() {
                           )}
 
                           {/* Actions */}
-                          <div className="flex gap-2 pt-3 border-t border-slate-100">
+                          <div className="pt-4 border-t border-white/5 relative z-10 flex gap-2">
                             <button
                               onClick={() => editFriend(friend)}
-                              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg font-semibold hover:shadow-lg transition-all text-xs sm:text-sm hover:scale-[1.02] active:scale-95"
+                              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-900/60 text-gray-300 border border-white/10 rounded-xl font-semibold hover:bg-gray-800 hover:text-white hover:border-white/20 transition-all text-xs tracking-widest uppercase"
                             >
                               <Edit2 size={14} />
-                              <span>Edit</span>
+                              <span>Configure Option</span>
                             </button>
                           </div>
                         </div>

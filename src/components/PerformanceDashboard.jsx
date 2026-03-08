@@ -34,7 +34,6 @@ export default function PerformanceDashboard() {
 
   const calculateWeeklyPoints = async () => {
     try {
-      // Get the first task ever created
       const { data: firstTask, error: firstTaskError } = await supabase
         .from('ToDo')
         .select('created_at')
@@ -49,23 +48,18 @@ export default function PerformanceDashboard() {
 
       const firstTaskDate = new Date(firstTask.created_at);
       const today = new Date();
-      
-      // Calculate days since first task
+
       const daysSinceStart = Math.floor((today - firstTaskDate) / (1000 * 60 * 60 * 24));
-      
-      // Calculate which week we're in (starting from first task)
       const currentWeekNumber = Math.floor(daysSinceStart / 7);
-      
-      // Calculate week start and end based on first task date
+
       const weekStart = new Date(firstTaskDate);
       weekStart.setDate(firstTaskDate.getDate() + (currentWeekNumber * 7));
       weekStart.setHours(0, 0, 0, 0);
-      
+
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekStart.getDate() + 6);
       weekEnd.setHours(23, 59, 59, 999);
 
-      // Get all todos for this week
       const { data: todos, error: todosError } = await supabase
         .from('ToDo')
         .select('*')
@@ -76,9 +70,7 @@ export default function PerformanceDashboard() {
 
       const totalTasks = todos.length;
       const completedTasks = todos.filter(t => t.completed && t.active).length;
-      const failedTasks = todos.filter(t => !t.completed && t.active).length;
 
-      // Calculate score based on completion rate (0-10)
       const completionRate = totalTasks > 0 ? (completedTasks / totalTasks) : 0;
       const weekScore = Math.round(completionRate * 10);
 
@@ -114,11 +106,8 @@ export default function PerformanceDashboard() {
       }
 
       setWeeklyPoints(result);
-      
-      // Refresh the graphs after calculation
       await loadPerformanceHistory();
       await loadWeeklyScores();
-      
       alert(`Weekly points calculated!\nScore: ${weekScore}/10\nCompleted: ${completedTasks}/${totalTasks} tasks (${(completionRate * 100).toFixed(0)}%)`);
     } catch (error) {
       console.error("Error calculating weekly points:", error);
@@ -128,7 +117,6 @@ export default function PerformanceDashboard() {
 
   const calculateMonthlyPoints = async () => {
     try {
-      // Get the first task ever created
       const { data: firstTask, error: firstTaskError } = await supabase
         .from('ToDo')
         .select('created_at')
@@ -143,23 +131,18 @@ export default function PerformanceDashboard() {
 
       const firstTaskDate = new Date(firstTask.created_at);
       const today = new Date();
-      
-      // Calculate days since first task
+
       const daysSinceStart = Math.floor((today - firstTaskDate) / (1000 * 60 * 60 * 24));
-      
-      // Calculate which month we're in (30-day periods from first task)
       const currentMonthNumber = Math.floor(daysSinceStart / 30);
-      
-      // Calculate month start and end based on first task date
+
       const monthStart = new Date(firstTaskDate);
       monthStart.setDate(firstTaskDate.getDate() + (currentMonthNumber * 30));
       monthStart.setHours(0, 0, 0, 0);
-      
+
       const monthEnd = new Date(monthStart);
       monthEnd.setDate(monthStart.getDate() + 29);
       monthEnd.setHours(23, 59, 59, 999);
 
-      // Get all todos for this month period
       const { data: todos, error: todosError } = await supabase
         .from('ToDo')
         .select('*')
@@ -170,9 +153,7 @@ export default function PerformanceDashboard() {
 
       const totalTasks = todos.length;
       const completedTasks = todos.filter(t => t.completed && t.active).length;
-      const failedTasks = todos.filter(t => !t.completed && t.active).length;
 
-      // Calculate score based on completion rate (0-10)
       const completionRate = totalTasks > 0 ? (completedTasks / totalTasks) : 0;
       const monthScore = Math.round(completionRate * 10);
 
@@ -209,11 +190,8 @@ export default function PerformanceDashboard() {
       }
 
       setMonthlyPoints(result);
-      
-      // Refresh the graphs after calculation
       await loadPerformanceHistory();
       await loadWeeklyScores();
-      
       alert(`Monthly points calculated!\nScore: ${monthScore}/10\nCompleted: ${completedTasks}/${totalTasks} tasks (${(completionRate * 100).toFixed(0)}%)`);
     } catch (error) {
       console.error("Error calculating monthly points:", error);
@@ -224,65 +202,29 @@ export default function PerformanceDashboard() {
   const loadDashboardData = async () => {
     setLoading(true);
     const today = new Date().toISOString().split('T')[0];
-    
     try {
-      const { data: summary } = await supabase
-        .from('daily_todo_summary')
-        .select('*')
-        .eq('day', today)
-        .maybeSingle();
+      const { data: summary } = await supabase.from('daily_todo_summary').select('*').eq('day', today).maybeSingle();
       setDailySummary(summary);
-
-      const { data: points } = await supabase
-        .from('daily_points')
-        .select('*')
-        .eq('day', today)
-        .maybeSingle();
+      const { data: points } = await supabase.from('daily_points').select('*').eq('day', today).maybeSingle();
       setDailyPoints(points);
-
-      const { data: performance } = await supabase
-        .from('daily_performance')
-        .select('*')
-        .eq('day', today)
-        .maybeSingle();
+      const { data: performance } = await supabase.from('daily_performance').select('*').eq('day', today).maybeSingle();
       setDailyPerformance(performance);
-
-      const { data: weekly } = await supabase
-        .from('weekly_points')
-        .select('*')
-        .order('week_start', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const { data: weekly } = await supabase.from('weekly_points').select('*').order('week_start', { ascending: false }).limit(1).maybeSingle();
       setWeeklyPoints(weekly);
-
       const currentMonth = new Date().getMonth() + 1;
       const currentYear = new Date().getFullYear();
-      const { data: monthly } = await supabase
-        .from('monthly_points')
-        .select('*')
-        .eq('month', currentMonth)
-        .eq('year', currentYear)
-        .maybeSingle();
+      const { data: monthly } = await supabase.from('monthly_points').select('*').eq('month', currentMonth).eq('year', currentYear).maybeSingle();
       setMonthlyPoints(monthly);
-
     } catch (error) {
       console.error("Error loading dashboard:", error);
     }
-    
     setLoading(false);
   };
 
   const loadTodosByDate = async (date) => {
     try {
-      const { data, error } = await supabase
-        .from('ToDo')
-        .select('*')
-        .gte('created_at', `${date}T00:00:00`)
-        .lte('created_at', `${date}T23:59:59`)
-        .order('created_at', { ascending: false });
-      
+      const { data, error } = await supabase.from('ToDo').select('*').gte('created_at', `${date}T00:00:00`).lte('created_at', `${date}T23:59:59`).order('created_at', { ascending: false });
       if (error) throw error;
-      
       setTodos(data || []);
     } catch (error) {
       console.error("Error loading todos:", error);
@@ -291,26 +233,15 @@ export default function PerformanceDashboard() {
 
   const loadPerformanceHistory = async () => {
     try {
-      // Calculate date 30 days ago
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
-      
-      // Get LAST 30 days of data (not first 30)
-      const { data, error } = await supabase
-        .from('daily_performance')
-        .select('day, completion_percentage, performance_status')
-        .gte('day', thirtyDaysAgoStr)
-        .order('day', { ascending: true });
-      
+      const { data, error } = await supabase.from('daily_performance').select('day, completion_percentage, performance_status').gte('day', thirtyDaysAgo.toISOString().split('T')[0]).order('day', { ascending: true });
       if (error) throw error;
-      
       const formattedData = (data || []).map(item => ({
         date: new Date(item.day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         percentage: parseFloat(item.completion_percentage),
         status: item.performance_status
       }));
-      
       setPerformanceHistory(formattedData);
     } catch (error) {
       console.error("Error loading performance history:", error);
@@ -319,75 +250,33 @@ export default function PerformanceDashboard() {
 
   const loadWeeklyScores = async () => {
     try {
-      // Calculate date 90 days ago
       const ninetyDaysAgo = new Date();
       ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-      const ninetyDaysAgoStr = ninetyDaysAgo.toISOString().split('T')[0];
-      
-      // Get LAST 90 days of daily points data
-      const { data, error } = await supabase
-        .from('daily_points')
-        .select('day, points')
-        .gte('day', ninetyDaysAgoStr)
-        .order('day', { ascending: true });
-      
+      const { data, error } = await supabase.from('daily_points').select('day, points').gte('day', ninetyDaysAgo.toISOString().split('T')[0]).order('day', { ascending: true });
       if (error) throw error;
-      
-      // Also get the first task to align weeks properly
-      const { data: firstTask } = await supabase
-        .from('ToDo')
-        .select('created_at')
-        .order('created_at', { ascending: true })
-        .limit(1)
-        .maybeSingle();
-      
-      if (!firstTask) {
-        setWeeklyScores([]);
-        return;
-      }
-      
+      const { data: firstTask } = await supabase.from('ToDo').select('created_at').order('created_at', { ascending: true }).limit(1).maybeSingle();
+      if (!firstTask) { setWeeklyScores([]); return; }
       const firstTaskDate = new Date(firstTask.created_at);
       firstTaskDate.setHours(0, 0, 0, 0);
-      
       const weekMap = new Map();
-      
       (data || []).forEach(item => {
         const itemDate = new Date(item.day);
         itemDate.setHours(0, 0, 0, 0);
-        
-        // Calculate days since first task
         const daysSinceFirst = Math.floor((itemDate - firstTaskDate) / (1000 * 60 * 60 * 24));
-        
-        // Determine which week this day belongs to
         const weekNumber = Math.floor(daysSinceFirst / 7);
-        
-        // Calculate week start based on first task date
         const weekStart = new Date(firstTaskDate);
         weekStart.setDate(firstTaskDate.getDate() + (weekNumber * 7));
-        
         const weekKey = weekStart.toISOString().split('T')[0];
-        
         if (!weekMap.has(weekKey)) {
           const weekEnd = new Date(weekStart);
           weekEnd.setDate(weekStart.getDate() + 6);
-          weekMap.set(weekKey, {
-            weekStart: weekStart,
-            weekEnd: weekEnd,
-            totalScore: 0,
-            days: 0
-          });
+          weekMap.set(weekKey, { weekStart: weekStart, weekEnd: weekEnd, totalScore: 0, days: 0 });
         }
-        
         const week = weekMap.get(weekKey);
         week.totalScore += item.points;
         week.days += 1;
       });
-      
-      // Sort by week start date (newest first) and take last 8 weeks
-      const weeklyData = Array.from(weekMap.values())
-        .sort((a, b) => b.weekStart - a.weekStart)
-        .slice(0, 8);
-      
+      const weeklyData = Array.from(weekMap.values()).sort((a, b) => b.weekStart - a.weekStart).slice(0, 8);
       setWeeklyScores(weeklyData);
     } catch (error) {
       console.error("Error loading weekly scores:", error);
@@ -396,57 +285,25 @@ export default function PerformanceDashboard() {
 
   const updateDailyPoints = async () => {
     const points = parseInt(pointsInput);
-    if (isNaN(points) || points < 0 || points > 10) {
-      alert('Points must be between 0 and 10');
-      return;
-    }
-
+    if (isNaN(points) || points < 0 || points > 10) { alert('Points must be between 0 and 10'); return; }
     const today = new Date().toISOString().split('T')[0];
-
     try {
-      const { data: existing } = await supabase
-        .from('daily_points')
-        .select('*')
-        .eq('day', today)
-        .maybeSingle();
-
+      const { data: existing } = await supabase.from('daily_points').select('*').eq('day', today).maybeSingle();
       let result;
       if (existing) {
-        const { data, error } = await supabase
-          .from('daily_points')
-          .update({
-            points: points,
-            reason: reasonInput || null
-          })
-          .eq('day', today)
-          .select()
-          .single();
-
+        const { data, error } = await supabase.from('daily_points').update({ points: points, reason: reasonInput || null }).eq('day', today).select().single();
         if (error) throw error;
         result = data;
       } else {
-        const { data, error } = await supabase
-          .from('daily_points')
-          .insert({
-            day: today,
-            points: points,
-            reason: reasonInput || null
-          })
-          .select()
-          .single();
-
+        const { data, error } = await supabase.from('daily_points').insert({ day: today, points: points, reason: reasonInput || null }).select().single();
         if (error) throw error;
         result = data;
       }
-
       setDailyPoints(result);
       setPointsInput('');
       setReasonInput('');
-      
-      // Refresh graphs after updating points
       await loadPerformanceHistory();
       await loadWeeklyScores();
-      
       alert('Daily points updated successfully!');
     } catch (error) {
       console.error("Error updating points:", error);
@@ -456,131 +313,54 @@ export default function PerformanceDashboard() {
 
   const calculateDailySummary = async () => {
     const today = new Date().toISOString().split('T')[0];
-
     try {
-      const { data: todos, error } = await supabase
-        .from('ToDo')
-        .select('*')
-        .gte('created_at', today + 'T00:00:00')
-        .lte('created_at', today + 'T23:59:59');
-
+      const { data: todos, error } = await supabase.from('ToDo').select('*').gte('created_at', today + 'T00:00:00').lte('created_at', today + 'T23:59:59');
       if (error) throw error;
-
       const total = todos.length;
       const completed = todos.filter(t => t.completed && t.active).length;
       const failed = todos.filter(t => !t.completed && t.active).length;
-
       const percentage = total > 0 ? (completed / total) * 100 : 0;
       let status = 'poor';
       if (percentage >= 90) status = 'excellent';
       else if (percentage >= 70) status = 'good';
       else if (percentage >= 50) status = 'average';
-
       const autoPoints = Math.round((percentage / 100) * 10);
 
-      const { data: existingSummary } = await supabase
-        .from('daily_todo_summary')
-        .select('*')
-        .eq('day', today)
-        .maybeSingle();
+      const { data: existingSummary } = await supabase.from('daily_todo_summary').select('*').eq('day', today).maybeSingle();
+      const { data: existingPerf } = await supabase.from('daily_performance').select('*').eq('day', today).maybeSingle();
+      const { data: existingPoints } = await supabase.from('daily_points').select('*').eq('day', today).maybeSingle();
 
-      const { data: existingPerf } = await supabase
-        .from('daily_performance')
-        .select('*')
-        .eq('day', today)
-        .maybeSingle();
+      let summaryResult, perfResult, pointsResult;
 
-      const { data: existingPoints } = await supabase
-        .from('daily_points')
-        .select('*')
-        .eq('day', today)
-        .maybeSingle();
-
-      let summaryResult;
       if (existingSummary) {
-        const { data } = await supabase
-          .from('daily_todo_summary')
-          .update({
-            total_todos: total,
-            completed_todos: completed,
-            failed_todos: failed
-          })
-          .eq('day', today)
-          .select()
-          .single();
+        const { data } = await supabase.from('daily_todo_summary').update({ total_todos: total, completed_todos: completed, failed_todos: failed }).eq('day', today).select().single();
         summaryResult = data;
       } else {
-        const { data } = await supabase
-          .from('daily_todo_summary')
-          .insert({
-            day: today,
-            total_todos: total,
-            completed_todos: completed,
-            failed_todos: failed
-          })
-          .select()
-          .single();
+        const { data } = await supabase.from('daily_todo_summary').insert({ day: today, total_todos: total, completed_todos: completed, failed_todos: failed }).select().single();
         summaryResult = data;
       }
 
-      let perfResult;
       if (existingPerf) {
-        const { data } = await supabase
-          .from('daily_performance')
-          .update({
-            completion_percentage: percentage.toFixed(2),
-            performance_status: status
-          })
-          .eq('day', today)
-          .select()
-          .single();
+        const { data } = await supabase.from('daily_performance').update({ completion_percentage: percentage.toFixed(2), performance_status: status }).eq('day', today).select().single();
         perfResult = data;
       } else {
-        const { data } = await supabase
-          .from('daily_performance')
-          .insert({
-            day: today,
-            completion_percentage: percentage.toFixed(2),
-            performance_status: status
-          })
-          .select()
-          .single();
+        const { data } = await supabase.from('daily_performance').insert({ day: today, completion_percentage: percentage.toFixed(2), performance_status: status }).select().single();
         perfResult = data;
       }
 
-      let pointsResult;
       if (existingPoints) {
-        const { data } = await supabase
-          .from('daily_points')
-          .update({
-            points: autoPoints,
-            reason: `Auto-calculated: ${completed}/${total} tasks completed (${percentage.toFixed(0)}%)`
-          })
-          .eq('day', today)
-          .select()
-          .single();
+        const { data } = await supabase.from('daily_points').update({ points: autoPoints, reason: `Auto-calculated: ${completed}/${total} tasks completed (${percentage.toFixed(0)}%)` }).eq('day', today).select().single();
         pointsResult = data;
       } else {
-        const { data } = await supabase
-          .from('daily_points')
-          .insert({
-            day: today,
-            points: autoPoints,
-            reason: `Auto-calculated: ${completed}/${total} tasks completed (${percentage.toFixed(0)}%)`
-          })
-          .select()
-          .single();
+        const { data } = await supabase.from('daily_points').insert({ day: today, points: autoPoints, reason: `Auto-calculated: ${completed}/${total} tasks completed (${percentage.toFixed(0)}%)` }).select().single();
         pointsResult = data;
       }
 
       setDailySummary(summaryResult);
       setDailyPerformance(perfResult);
       setDailyPoints(pointsResult);
-      
-      // Refresh graphs after calculation
       await loadPerformanceHistory();
       await loadWeeklyScores();
-      
       alert('Daily summary recalculated successfully!');
     } catch (error) {
       console.error("Error calculating summary:", error);
@@ -600,568 +380,500 @@ export default function PerformanceDashboard() {
 
   const getPerformanceColor = (status) => {
     const colors = {
-      excellent: 'from-emerald-400 to-teal-500',
-      good: 'from-sky-400 to-blue-500',
-      average: 'from-amber-400 to-orange-500',
-      poor: 'from-rose-400 to-red-500'
+      excellent: 'emerald',
+      good: 'sky',
+      average: 'amber',
+      poor: 'rose'
     };
-    return colors[status] || 'from-slate-400 to-slate-500';
+    return colors[status] || 'slate';
   };
 
   const getPerformanceIcon = (status) => {
-    if (status === 'excellent') return <Sparkles className="text-emerald-500" size={36} />;
-    if (status === 'good') return <TrendingUp className="text-sky-500" size={36} />;
-    if (status === 'average') return <Activity className="text-amber-500" size={36} />;
-    return <CircleDot className="text-rose-500" size={36} />;
+    if (status === 'excellent') return <Sparkles className="text-emerald-400" size={32} />;
+    if (status === 'good') return <TrendingUp className="text-sky-400" size={32} />;
+    if (status === 'average') return <Activity className="text-amber-400" size={32} />;
+    return <CircleDot className="text-rose-400" size={32} />;
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 flex items-center justify-center">
+      <div className="flex items-center justify-center p-12">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-sky-200 border-t-sky-500 rounded-full animate-spin"></div>
-          <div className="text-slate-600 text-lg font-medium">Loading performance data...</div>
+          <div className="w-12 h-12 border-4 border-indigo-900 border-t-indigo-500 rounded-full animate-spin shadow-[0_0_15px_rgba(99,102,241,0.5)]"></div>
+          <div className="text-indigo-400 font-mono text-sm tracking-widest uppercase animate-pulse">Computing Metrics...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="animate-slideIn" style={{ animationDelay: '0.1s' }}>
       <Navbar />
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 py-8 px-4">
-        <div className="max-w-7xl mx-auto">
-          
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center p-4 bg-white rounded-2xl mb-4 shadow-lg shadow-sky-100">
-              <Activity className="text-sky-500" size={42} strokeWidth={2.5} />
-            </div>
-            <h1 className="text-5xl font-bold text-slate-800 mb-2 tracking-tight">Performance Dashboard</h1>
-            <p className="text-slate-500 text-lg font-medium">Track your productivity and monitor your progress</p>
+      <style>{`
+        .dash-glass {
+          background: rgba(15, 23, 42, 0.6);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+        .dash-input {
+          background: rgba(30, 41, 59, 0.5);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          color: #e2e8f0;
+          transition: all 0.3s ease;
+        }
+        .dash-input:focus {
+          border-color: rgba(99, 102, 241, 0.5);
+          box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
+          outline: none;
+        }
+        .dash-btn {
+          background: linear-gradient(to right, rgba(79, 70, 229, 0.8), rgba(99, 102, 241, 0.8));
+          color: white;
+          border: 1px solid rgba(99, 102, 241, 0.5);
+          transition: all 0.3s ease;
+        }
+        .dash-btn:hover {
+          background: linear-gradient(to right, rgba(79, 70, 229, 1), rgba(99, 102, 241, 1));
+          box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+        }
+      `}</style>
+
+      <div className="max-w-7xl mx-auto py-8 px-4">
+
+        {/* Header */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center p-4 dash-glass rounded-2xl mb-4 text-cyan-400 border border-cyan-500/30 shadow-[0_0_20px_rgba(34,211,238,0.2)]">
+            <Activity size={32} strokeWidth={2} />
           </div>
+          <h1 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-gray-100 via-white to-gray-400 mb-2 tracking-wide">
+            Telemetry Dashboard
+          </h1>
+          <p className="text-cyan-400/60 font-mono text-sm tracking-widest uppercase">
+            Systems Analytics & Performance Tracking
+          </p>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            
-            <div className="bg-white rounded-2xl p-6 shadow-xl shadow-slate-200/50 border border-slate-100 hover:shadow-2xl hover:shadow-sky-200/30 transition-all duration-300">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold text-slate-800">Today's Summary</h3>
-                <div className="p-2.5 bg-sky-50 rounded-xl">
-                  <Calendar className="text-sky-500" size={22} strokeWidth={2.5} />
-                </div>
-              </div>
-              {dailySummary ? (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
-                    <span className="text-slate-600 font-semibold text-sm">Total Tasks</span>
-                    <span className="text-3xl font-bold text-slate-800">{dailySummary.total_todos}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl border border-emerald-100">
-                    <span className="text-emerald-700 font-semibold text-sm flex items-center gap-2">
-                      <CheckCircle size={18} strokeWidth={2.5} />Completed
-                    </span>
-                    <span className="text-2xl font-bold text-emerald-600">{dailySummary.completed_todos}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-rose-50 to-red-50 rounded-xl border border-rose-100">
-                    <span className="text-rose-700 font-semibold text-sm flex items-center gap-2">
-                      <XCircle size={18} strokeWidth={2.5} />Failed
-                    </span>
-                    <span className="text-2xl font-bold text-rose-600">{dailySummary.failed_todos}</span>
-                  </div>
-                  <button onClick={calculateDailySummary} className="w-full mt-3 px-5 py-3 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-xl hover:from-sky-600 hover:to-blue-700 transition-all font-semibold text-sm shadow-lg shadow-sky-200">Recalculate</button>
-                </div>
-              ) : (
-                <div className="text-center py-10">
-                  <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Calendar className="text-slate-400" size={28} />
-                  </div>
-                  <p className="text-slate-500 mb-4 font-medium">No data for today</p>
-                  <button onClick={calculateDailySummary} className="px-6 py-3 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-xl hover:from-sky-600 hover:to-blue-700 transition-all font-semibold shadow-lg shadow-sky-200">Calculate Summary</button>
-                </div>
-              )}
-            </div>
+        {/* Top Cards Row */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
 
-            <div className="bg-white rounded-2xl p-6 shadow-xl shadow-slate-200/50 border border-slate-100 hover:shadow-2xl hover:shadow-sky-200/30 transition-all duration-300">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold text-slate-800">Performance</h3>
-                <div className="p-2.5 bg-sky-50 rounded-xl">
-                  <TrendingUp className="text-sky-500" size={22} strokeWidth={2.5} />
-                </div>
-              </div>
-              {dailyPerformance ? (
-                <div>
-                  <div className="text-center mb-5">
-                    <div className="mb-4 inline-flex p-4 bg-gradient-to-br from-slate-50 to-blue-50 rounded-2xl">
-                      {getPerformanceIcon(dailyPerformance.performance_status)}
-                    </div>
-                    <div className="text-6xl font-black text-slate-800 mb-3">{dailyPerformance.completion_percentage}%</div>
-                    <div className={`inline-block px-6 py-2.5 rounded-full text-white font-bold uppercase text-xs tracking-wider bg-gradient-to-r ${getPerformanceColor(dailyPerformance.performance_status)} shadow-lg`}>
-                      {dailyPerformance.performance_status}
-                    </div>
-                  </div>
-                  <button onClick={calculateDailySummary} className="w-full px-5 py-3 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-xl hover:from-sky-600 hover:to-blue-700 transition-all font-semibold text-sm shadow-lg shadow-sky-200">Recalculate</button>
-                </div>
-              ) : (
-                <div className="text-center py-10">
-                  <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Activity className="text-slate-400" size={28} />
-                  </div>
-                  <p className="text-slate-500 mb-4 font-medium">No performance data</p>
-                  <button onClick={calculateDailySummary} className="px-6 py-3 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-xl hover:from-sky-600 hover:to-blue-700 transition-all font-semibold shadow-lg shadow-sky-200">Calculate Performance</button>
-                </div>
-              )}
-            </div>
-
-            <div className="bg-white rounded-2xl p-6 shadow-xl shadow-slate-200/50 border border-slate-100 hover:shadow-2xl hover:shadow-sky-200/30 transition-all duration-300">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold text-slate-800">Today's Points</h3>
-                <div className="p-2.5 bg-amber-50 rounded-xl">
-                  <Zap className="text-amber-500" size={22} strokeWidth={2.5} />
-                </div>
-              </div>
-              <div>
-                {dailyPoints ? (
-                  <div className="mb-5">
-                    <div className="text-center mb-4">
-                      <div className="text-7xl font-black bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 bg-clip-text text-transparent mb-2">{dailyPoints.points}</div>
-                      <div className="text-xl text-slate-500 font-semibold">/ 10 points</div>
-                      {dailyPoints.reason && (
-                        <p className="text-xs text-slate-600 mt-4 px-4 py-2.5 bg-slate-50 rounded-lg border border-slate-100">{dailyPoints.reason}</p>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center mb-5 py-6 bg-slate-50 rounded-xl border border-slate-100">
-                    <Zap className="mx-auto mb-2 text-slate-300" size={32} />
-                    <p className="text-slate-500 text-sm font-medium mb-1">No points assigned yet</p>
-                    <p className="text-xs text-slate-400">Calculate summary to auto-assign</p>
-                  </div>
-                )}
-                <div className="space-y-2.5">
-                  <input type="number" min="0" max="10" value={pointsInput} onChange={(e) => setPointsInput(e.target.value)} placeholder="Points (0-10)" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:border-sky-400 focus:bg-white transition-all text-sm font-medium" />
-                  <input type="text" value={reasonInput} onChange={(e) => setReasonInput(e.target.value)} placeholder="Reason (optional)" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:border-sky-400 focus:bg-white transition-all text-sm font-medium" />
-                  <button onClick={updateDailyPoints} className="w-full px-5 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl hover:from-amber-600 hover:to-orange-700 transition-all font-semibold text-sm shadow-lg shadow-amber-200">Override Points Manually</button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div className="bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/50 border border-slate-100 hover:shadow-2xl hover:shadow-sky-200/30 transition-all duration-300">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className="text-xl font-bold text-slate-800 mb-1">This Week's Points</h3>
-                  <p className="text-xs text-slate-500">Sum of all daily points this week</p>
-                </div>
-                <div className="p-3 bg-sky-50 rounded-xl">
-                  <Award className="text-sky-500" size={28} strokeWidth={2.5} />
-                </div>
-              </div>
-              {weeklyPoints ? (
-                <div>
-                  <div className="flex items-center justify-center gap-4 mb-4">
-                    <div className="text-center">
-                      <div className="text-6xl font-black bg-gradient-to-br from-sky-500 via-blue-500 to-cyan-600 bg-clip-text text-transparent">{weeklyPoints.total_points}</div>
-                      <div className="text-sm text-slate-400 font-bold mt-1">/ 10</div>
-                    </div>
-                  </div>
-                  <p className="text-sm text-slate-600 font-medium mb-4 text-center">Based on completed vs total tasks this week</p>
-                  
-                  {(() => {
-                    const weekScore = weeklyPoints.total_points;
-                    const notification = getPerformanceNotification(weekScore);
-                    return (
-                      <div className={`mb-4 p-4 bg-gradient-to-r from-${notification.color}-50 to-${notification.color}-100 border border-${notification.color}-200 rounded-xl`}>
-                        <div className="flex items-center gap-3">
-                          <span className="text-3xl">{notification.icon}</span>
-                          <div>
-                            <div className={`text-sm font-bold text-${notification.color}-800 mb-1`}>Week Performance</div>
-                            <div className={`text-xs text-${notification.color}-700`}>{notification.text}</div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                  
-                  <div className="w-full bg-slate-200 rounded-full h-3 mb-4">
-                    <div
-                      className="h-3 rounded-full bg-gradient-to-r from-sky-400 to-blue-500 transition-all"
-                      style={{ width: `${(weeklyPoints.total_points / 10) * 100}%` }}
-                    ></div>
-                  </div>
-                  
-                  <div className="p-4 bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl border border-slate-100 mb-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs text-slate-500 font-medium">Week Period (7 days)</span>
-                      <span className="text-xs text-sky-600 font-bold">
-                        {((weeklyPoints.total_points / 10) * 100).toFixed(0)}% Score
-                      </span>
-                    </div>
-                    <p className="text-sm text-slate-700 font-semibold">
-                      {new Date(weeklyPoints.week_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(weeklyPoints.week_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                    </p>
-                  </div>
-
-                  <button onClick={calculateWeeklyPoints} className="w-full mb-3 px-5 py-3 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-xl hover:from-sky-600 hover:to-blue-700 transition-all font-semibold text-sm shadow-lg shadow-sky-200">
-                    Recalculate Weekly Score
-                  </button>
-
-                  <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg">
-                    <p className="text-xs text-blue-700 flex items-start gap-2">
-                      <span className="text-blue-500 mt-0.5">💡</span>
-                      <span><strong>How it works:</strong> Week starts from your first task date. Score is based on completion rate: (completed tasks ÷ total tasks) × 10. Max score: 10/10</span>
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-10 bg-slate-50 rounded-xl border border-slate-100">
-                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-                    <Award className="text-slate-300" size={32} />
-                  </div>
-                  <p className="text-slate-500 font-medium mb-4">No weekly data yet</p>
-                  <button onClick={calculateWeeklyPoints} className="px-6 py-3 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-xl hover:from-sky-600 hover:to-blue-700 transition-all font-semibold shadow-lg shadow-sky-200">
-                    Calculate Weekly Score
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div className="bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/50 border border-slate-100 hover:shadow-2xl hover:shadow-sky-200/30 transition-all duration-300">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className="text-xl font-bold text-slate-800 mb-1">This Month's Points</h3>
-                  <p className="text-xs text-slate-500">Sum of all daily points this month</p>
-                </div>
-                <div className="p-3 bg-amber-50 rounded-xl">
-                  <Trophy className="text-amber-500" size={28} strokeWidth={2.5} />
-                </div>
-              </div>
-              {monthlyPoints ? (
-                <div>
-                  <div className="flex items-center justify-center gap-4 mb-4">
-                    <div className="text-center">
-                      <div className="text-6xl font-black bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 bg-clip-text text-transparent">
-                        {monthlyPoints.total_points}
-                      </div>
-                      <div className="text-sm text-slate-400 font-bold mt-1">/ 10</div>
-                    </div>
-                  </div>
-                  <p className="text-sm text-slate-600 font-medium mb-4 text-center">
-                    Based on completed vs total tasks this month
-                  </p>
-                  
-                  {(() => {
-                    const monthScore = monthlyPoints.total_points;
-                    const notification = getPerformanceNotification(monthScore);
-                    return (
-                      <div className={`mb-4 p-4 bg-gradient-to-r from-${notification.color}-50 to-${notification.color}-100 border border-${notification.color}-200 rounded-xl`}>
-                        <div className="flex items-center gap-3">
-                          <span className="text-3xl">{notification.icon}</span>
-                          <div>
-                            <div className={`text-sm font-bold text-${notification.color}-800 mb-1`}>Month Performance</div>
-                            <div className={`text-xs text-${notification.color}-700`}>{notification.text}</div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                  
-                  <div className="w-full bg-slate-200 rounded-full h-3 mb-4">
-                    <div
-                      className="h-3 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all"
-                      style={{ width: `${(monthlyPoints.total_points / 10) * 100}%` }}
-                    ></div>
-                  </div>
-                  
-                  <div className="p-4 bg-gradient-to-r from-slate-50 to-amber-50 rounded-xl border border-slate-100 mb-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs text-slate-500 font-medium">Month Period (30 days)</span>
-                      <span className="text-xs text-amber-600 font-bold">
-                        {((monthlyPoints.total_points / 10) * 100).toFixed(0)}% Score
-                      </span>
-                    </div>
-                    <p className="text-sm text-slate-700 font-semibold">
-                      Month {monthlyPoints.month}
-                    </p>
-                  </div>
-
-                  <button onClick={calculateMonthlyPoints} className="w-full mb-3 px-5 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl hover:from-amber-600 hover:to-orange-700 transition-all font-semibold text-sm shadow-lg shadow-amber-200">
-                    Recalculate Monthly Score
-                  </button>
-
-                  <div className="p-3 bg-amber-50 border border-amber-100 rounded-lg">
-                    <p className="text-xs text-amber-700 flex items-start gap-2">
-                      <span className="text-amber-500 mt-0.5">💡</span>
-                      <span><strong>How it works:</strong> Month starts from your first task date (30-day periods). Score is based on completion rate: (completed tasks ÷ total tasks) × 10. Max score: 10/10</span>
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-10 bg-slate-50 rounded-xl border border-slate-100">
-                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-                    <Trophy className="text-slate-300" size={32} />
-                  </div>
-                  <p className="text-slate-500 font-medium mb-4">No monthly data yet</p>
-                  <button onClick={calculateMonthlyPoints} className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl hover:from-amber-600 hover:to-orange-700 transition-all font-semibold shadow-lg shadow-amber-200">
-                    Calculate Monthly Score
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-8 shadow-2xl border border-slate-700 mb-8">
+          {/* Today's Summary */}
+          <div className="dash-glass rounded-3xl p-6 relative overflow-hidden group">
+            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-cyan-500/0 via-cyan-500 to-cyan-500/0 opacity-50"></div>
             <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-2xl font-bold text-white mb-1">Performance Trend</h3>
-                <p className="text-slate-400 text-sm">Last 30 days completion rate</p>
-              </div>
-              <div className="flex items-center gap-4">
-                {performanceHistory.length > 0 && (
-                  <div className="text-right">
-                    <div className="text-3xl font-bold text-emerald-400">
-                      {performanceHistory[performanceHistory.length - 1]?.percentage.toFixed(1)}%
-                    </div>
-                    <div className="text-xs text-slate-400 flex items-center justify-end gap-1">
-                      <TrendingUp className="text-emerald-400" size={14} />
-                      <span>Current</span>
-                    </div>
-                  </div>
-                )}
-                <div className="p-2.5 bg-slate-800 rounded-xl border border-slate-700">
-                  <BarChart3 className="text-slate-400" size={22} strokeWidth={2.5} />
-                </div>
+              <h3 className="text-lg font-bold text-gray-200">Daily Summary</h3>
+              <div className="p-2.5 bg-cyan-500/10 border border-cyan-500/20 rounded-xl">
+                <Calendar className="text-cyan-400" size={20} />
               </div>
             </div>
-            
-            {performanceHistory.length > 0 ? (
-              <div className="h-96 bg-slate-950 rounded-xl p-4 border border-slate-800">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={performanceHistory} margin={{ top: 20, right: 20, left: -10, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="colorGreen" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-                    <XAxis 
-                      dataKey="date" 
-                      stroke="#64748b"
-                      tick={{ fill: '#64748b', fontSize: 11 }}
-                      tickLine={{ stroke: '#334155' }}
-                      axisLine={{ stroke: '#334155' }}
-                    />
-                    <YAxis 
-                      stroke="#64748b"
-                      tick={{ fill: '#64748b', fontSize: 11 }}
-                      tickLine={{ stroke: '#334155' }}
-                      axisLine={{ stroke: '#334155' }}
-                      domain={[0, 100]}
-                      ticks={[0, 25, 50, 75, 100]}
-                      tickFormatter={(value) => `${value}%`}
-                    />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: '#0f172a', 
-                        border: '1px solid #334155',
-                        borderRadius: '8px',
-                        padding: '12px',
-                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)'
-                      }}
-                      labelStyle={{ fontWeight: 'bold', color: '#e2e8f0', marginBottom: '4px' }}
-                      formatter={(value) => [
-                        <span style={{ color: '#10b981', fontWeight: 'bold', fontSize: '16px' }}>
-                          {value.toFixed(1)}%
-                        </span>, 
-                        'Completion Rate'
-                      ]}
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="percentage" 
-                      stroke="#10b981" 
-                      strokeWidth={2.5}
-                      fillOpacity={1} 
-                      fill="url(#colorGreen)"
-                      dot={{ fill: '#10b981', strokeWidth: 2, r: 4, stroke: '#0f172a' }}
-                      activeDot={{ r: 6, fill: '#10b981', stroke: '#fff', strokeWidth: 2 }}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+
+            {dailySummary ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-4 bg-gray-900/50 rounded-xl border border-white/5">
+                  <span className="text-gray-400 font-mono text-xs tracking-wider uppercase">Total Tasks</span>
+                  <span className="text-2xl font-bold text-gray-200">{dailySummary.total_todos}</span>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-emerald-900/20 rounded-xl border border-emerald-500/20">
+                  <span className="text-emerald-400/80 font-mono text-xs tracking-wider uppercase flex items-center gap-2">
+                    <CheckCircle size={14} /> Completed
+                  </span>
+                  <span className="text-2xl font-bold text-emerald-400">{dailySummary.completed_todos}</span>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-rose-900/20 rounded-xl border border-rose-500/20">
+                  <span className="text-rose-400/80 font-mono text-xs tracking-wider uppercase flex items-center gap-2">
+                    <XCircle size={14} /> Failed
+                  </span>
+                  <span className="text-2xl font-bold text-rose-400">{dailySummary.failed_todos}</span>
+                </div>
+                <button onClick={calculateDailySummary} className="w-full mt-2 px-5 py-3 dash-btn rounded-xl font-semibold text-sm tracking-wide uppercase">
+                  Recalculate Data
+                </button>
               </div>
             ) : (
-              <div className="text-center py-16 bg-slate-950 rounded-xl border border-slate-800">
-                <div className="w-20 h-20 bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-800">
-                  <TrendingUp className="text-slate-600" size={36} />
-                </div>
-                <p className="text-slate-300 font-medium text-lg mb-1">No performance data yet</p>
-                <p className="text-slate-500 text-sm">Complete tasks to start tracking your performance</p>
+              <div className="text-center py-10 bg-gray-900/30 rounded-2xl border border-white/5">
+                <Calendar className="text-gray-600 mx-auto mb-3" size={32} />
+                <p className="text-gray-500 text-sm mb-4">No metrics recorded today</p>
+                <button onClick={calculateDailySummary} className="px-6 py-2 dash-btn rounded-xl text-sm font-semibold tracking-wide uppercase">
+                  Initialize Scan
+                </button>
               </div>
             )}
           </div>
 
-          <div className="bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/50 border border-slate-100 mb-8">
+          {/* Performance Status */}
+          <div className="dash-glass rounded-3xl p-6 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-fuchsia-500/0 via-fuchsia-500 to-fuchsia-500/0 opacity-50"></div>
             <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-2xl font-bold text-slate-800 mb-1">Weekly Performance Scores</h3>
-                <p className="text-slate-500 text-sm">Total daily points aggregated by week</p>
-              </div>
-              <div className="p-3 bg-purple-50 rounded-xl">
-                <Trophy className="text-purple-500" size={28} strokeWidth={2.5} />
+              <h3 className="text-lg font-bold text-gray-200">System Efficiency</h3>
+              <div className="p-2.5 bg-fuchsia-500/10 border border-fuchsia-500/20 rounded-xl">
+                <TrendingUp className="text-fuchsia-400" size={20} />
               </div>
             </div>
 
-            {weeklyScores.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {weeklyScores.map((week, index) => {
-                  const isCurrentWeek = index === 0;
-                  const maxPossibleScore = week.days * 10;
-                  const percentage = (week.totalScore / maxPossibleScore) * 100;
-                  
+            {dailyPerformance ? (
+              <div className="flex flex-col h-[calc(100%-4rem)]">
+                <div className="flex-1 flex flex-col items-center justify-center">
+                  <div className={`mb-4 inline-flex p-4 rounded-2xl bg-${getPerformanceColor(dailyPerformance.performance_status)}-500/10 border border-${getPerformanceColor(dailyPerformance.performance_status)}-500/30 shadow-[0_0_20px_rgba(var(--tw-colors-${getPerformanceColor(dailyPerformance.performance_status)}-500),0.2)]`}>
+                    {getPerformanceIcon(dailyPerformance.performance_status)}
+                  </div>
+                  <div className="flex items-baseline gap-1 mb-3">
+                    <div className="text-6xl font-light text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 to-cyan-400">
+                      {dailyPerformance.completion_percentage}
+                    </div>
+                    <span className="text-2xl text-cyan-400/60">%</span>
+                  </div>
+                  <div className={`px-4 py-1.5 rounded-full text-${getPerformanceColor(dailyPerformance.performance_status)}-400 bg-${getPerformanceColor(dailyPerformance.performance_status)}-500/10 border border-${getPerformanceColor(dailyPerformance.performance_status)}-500/20 text-[10px] font-bold uppercase tracking-widest`}>
+                    Status: {dailyPerformance.performance_status}
+                  </div>
+                </div>
+                <button onClick={calculateDailySummary} className="w-full mt-4 px-5 py-3 dash-btn rounded-xl font-semibold text-sm tracking-wide uppercase">
+                  Update Matrix
+                </button>
+              </div>
+            ) : (
+              <div className="text-center py-10 bg-gray-900/30 rounded-2xl border border-white/5">
+                <Activity className="text-gray-600 mx-auto mb-3" size={32} />
+                <p className="text-gray-500 text-sm mb-4">Efficiency matrix offline</p>
+                <button onClick={calculateDailySummary} className="px-6 py-2 dash-btn rounded-xl text-sm font-semibold tracking-wide uppercase">
+                  Compute Efficiency
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Today's Points */}
+          <div className="dash-glass rounded-3xl p-6 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-amber-500/0 via-amber-500 to-amber-500/0 opacity-50"></div>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-bold text-gray-200">Energy Credits</h3>
+              <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                <Zap className="text-amber-400" size={20} />
+              </div>
+            </div>
+
+            <div className="flex flex-col h-[calc(100%-4rem)] justify-between">
+              {dailyPoints ? (
+                <div className="text-center mb-4">
+                  <div className="flex items-baseline justify-center gap-2 mb-2">
+                    <div className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-amber-300 to-amber-600 drop-shadow-[0_0_10px_rgba(245,158,11,0.3)]">
+                      {dailyPoints.points}
+                    </div>
+                    <div className="text-sm font-mono text-gray-500">/ 10 CR</div>
+                  </div>
+                  {dailyPoints.reason && (
+                    <p className="text-[10px] text-gray-400 font-mono tracking-wide px-3 py-2 bg-gray-900/50 rounded-lg border border-white/5 inline-block">
+                      {dailyPoints.reason}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center mb-4 py-4 bg-gray-900/30 rounded-xl border border-white/5">
+                  <Zap className="mx-auto mb-2 text-gray-600" size={28} />
+                  <p className="text-gray-500 text-[10px] font-mono tracking-widest uppercase">No Credits Generated</p>
+                </div>
+              )}
+
+              <div className="space-y-2 mt-auto">
+                <input type="number" min="0" max="10" value={pointsInput} onChange={(e) => setPointsInput(e.target.value)} placeholder="Manual Credits (0-10)" className="w-full px-4 py-2.5 dash-input rounded-xl text-sm" />
+                <input type="text" value={reasonInput} onChange={(e) => setReasonInput(e.target.value)} placeholder="Override Auth Reason" className="w-full px-4 py-2.5 dash-input rounded-xl text-sm" />
+                <button onClick={updateDailyPoints} className="w-full px-5 py-3 bg-amber-600/20 hover:bg-amber-600/40 text-amber-500 border border-amber-500/30 rounded-xl transition-all font-semibold text-xs tracking-widest uppercase shadow-[0_0_10px_rgba(245,158,11,0.1)]">
+                  Override Credits
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Aggregate Rows */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+
+          {/* This Week */}
+          <div className="dash-glass rounded-3xl p-8 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-[50px] pointer-events-none"></div>
+            <div className="flex items-center justify-between mb-6 relative z-10">
+              <div>
+                <h3 className="text-xl font-bold text-gray-200 mb-1">Weekly Cycle</h3>
+                <p className="text-[10px] text-gray-500 font-mono tracking-widest uppercase">Aggregated Credits</p>
+              </div>
+              <div className="p-3 bg-indigo-500/10 border border-indigo-500/30 rounded-xl">
+                <Award className="text-indigo-400" size={24} />
+              </div>
+            </div>
+
+            {weeklyPoints ? (
+              <div className="relative z-10">
+                <div className="flex items-end justify-center gap-2 mb-6">
+                  <div className="text-7xl font-light text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">
+                    {weeklyPoints.total_points}
+                  </div>
+                  <div className="text-gray-600 font-mono mb-2">/ 10</div>
+                </div>
+
+                {(() => {
+                  const notification = getPerformanceNotification(weeklyPoints.total_points);
                   return (
-                    <div
-                      key={week.weekStart.toISOString()}
-                      className={`p-6 rounded-xl border-2 transition-all hover:scale-105 ${
-                        isCurrentWeek
-                          ? 'bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-300 shadow-lg shadow-purple-100'
-                          : 'bg-white border-slate-200 hover:border-purple-200 hover:shadow-md'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                          {isCurrentWeek ? 'Current Week' : `Week ${index + 1}`}
-                        </div>
-                        {isCurrentWeek && (
-                          <div className="px-2 py-1 bg-purple-500 text-white text-xs font-bold rounded-full">
-                            LIVE
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className={`text-5xl font-black mb-2 ${
-                        isCurrentWeek
-                          ? 'bg-gradient-to-br from-purple-600 to-indigo-600 bg-clip-text text-transparent'
-                          : 'text-slate-800'
-                      }`}>
-                        {week.totalScore}
-                      </div>
-                      
-                      <div className="text-sm text-slate-600 font-medium mb-3">
-                        out of {maxPossibleScore} points
-                      </div>
-                      
-                      <div className="w-full bg-slate-200 rounded-full h-2 mb-3">
-                        <div
-                          className={`h-2 rounded-full transition-all ${
-                            percentage >= 80 ? 'bg-gradient-to-r from-emerald-400 to-teal-500' :
-                            percentage >= 60 ? 'bg-gradient-to-r from-sky-400 to-blue-500' :
-                            percentage >= 40 ? 'bg-gradient-to-r from-amber-400 to-orange-500' :
-                            'bg-gradient-to-r from-rose-400 to-red-500'
-                          }`}
-                          style={{ width: `${percentage}%` }}
-                        ></div>
-                      </div>
-                      
-                      <div className="text-xs text-slate-500 font-medium mb-2">
-                        {week.weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {week.weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </div>
-                      
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-500 font-medium">{week.days} days tracked</span>
-                        <span className={`font-bold ${
-                          percentage >= 80 ? 'text-emerald-600' :
-                          percentage >= 60 ? 'text-sky-600' :
-                          percentage >= 40 ? 'text-amber-600' :
-                          'text-rose-600'
-                        }`}>
-                          {percentage.toFixed(0)}%
-                        </span>
+                    <div className="mb-6 p-4 bg-gray-900/50 border border-white/5 rounded-xl flex items-center gap-4">
+                      <span className="text-2xl drop-shadow-[0_0_5px_rgba(255,255,255,0.5)]">{notification.icon}</span>
+                      <div>
+                        <div className="text-[10px] text-gray-500 font-mono uppercase tracking-widest mb-1">Cycle Status</div>
+                        <div className="text-sm font-medium text-gray-300">{notification.text}</div>
                       </div>
                     </div>
                   );
-                })}
+                })()}
+
+                <div className="w-full bg-gray-900 rounded-full h-1.5 mb-6 overflow-hidden border border-white/5">
+                  <div
+                    className="h-full bg-gradient-to-r from-indigo-500 to-cyan-400 relative"
+                    style={{ width: `${(weeklyPoints.total_points / 10) * 100}%` }}
+                  >
+                    <div className="absolute top-0 right-0 bottom-0 w-20 bg-gradient-to-r from-transparent to-white/30 animate-pulse"></div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-[10px] font-mono tracking-widest uppercase text-gray-500 mb-6">
+                  <span>{new Date(weeklyPoints.week_start).toLocaleDateString()} - {new Date(weeklyPoints.week_end).toLocaleDateString()}</span>
+                  <span className="text-indigo-400">{((weeklyPoints.total_points / 10) * 100).toFixed(0)}% Yield</span>
+                </div>
+
+                <button onClick={calculateWeeklyPoints} className="w-full dash-btn py-3 rounded-xl font-semibold text-xs tracking-widest uppercase">
+                  Recalculate Cycle
+                </button>
               </div>
             ) : (
-              <div className="text-center py-16 bg-slate-50 rounded-xl border border-slate-100">
-                <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-                  <Trophy className="text-slate-300" size={36} />
-                </div>
-                <p className="text-slate-500 font-medium text-lg mb-1">No weekly scores yet</p>
-                <p className="text-slate-400 text-sm">Start tracking daily points to see weekly performance</p>
+              <div className="text-center py-12 bg-gray-900/30 rounded-2xl border border-white/5">
+                <Award className="text-gray-600 mx-auto mb-3" size={36} />
+                <p className="text-gray-500 text-sm mb-4">No cycle data found</p>
+                <button onClick={calculateWeeklyPoints} className="px-6 py-2 dash-btn rounded-xl text-xs font-semibold tracking-widest uppercase">
+                  Compute Cycle
+                </button>
               </div>
             )}
           </div>
 
-          <div className="bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/50 border border-slate-100">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-slate-800">Tasks History</h3>
-              <div className="flex items-center gap-3">
-                <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} max={new Date().toISOString().split('T')[0]} className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-sky-400 focus:bg-white transition-all text-sm font-medium" />
-                <div className="p-2.5 bg-sky-50 rounded-xl">
-                  <BarChart3 className="text-sky-500" size={22} strokeWidth={2.5} />
-                </div>
+          {/* This Month */}
+          <div className="dash-glass rounded-3xl p-8 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-fuchsia-500/10 rounded-full blur-[50px] pointer-events-none"></div>
+            <div className="flex items-center justify-between mb-6 relative z-10">
+              <div>
+                <h3 className="text-xl font-bold text-gray-200 mb-1">Monthly Phase</h3>
+                <p className="text-[10px] text-gray-500 font-mono tracking-widest uppercase">Macro Aggregation</p>
+              </div>
+              <div className="p-3 bg-fuchsia-500/10 border border-fuchsia-500/30 rounded-xl">
+                <Trophy className="text-fuchsia-400" size={24} />
               </div>
             </div>
 
-            <div className="space-y-3">
-              {todos.length === 0 ? (
-                <div className="text-center py-16 bg-slate-50 rounded-xl border border-slate-100">
-                  <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-                    <Target className="text-slate-300" size={36} />
+            {monthlyPoints ? (
+              <div className="relative z-10">
+                <div className="flex items-end justify-center gap-2 mb-6">
+                  <div className="text-7xl font-light text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 to-rose-400">
+                    {monthlyPoints.total_points}
                   </div>
-                  <p className="text-slate-500 font-medium text-lg mb-1">No tasks found</p>
-                  <p className="text-slate-400 text-sm">No tasks were created on this date</p>
+                  <div className="text-gray-600 font-mono mb-2">/ 10</div>
                 </div>
-              ) : (
-                <>
-                  <div className="grid grid-cols-3 gap-4 mb-4 p-4 bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl border border-slate-100">
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-slate-800">{todos.length}</div>
-                      <div className="text-xs text-slate-500 font-medium mt-1">Total</div>
-                    </div>
-                    <div className="text-center border-x border-slate-200">
-                      <div className="text-3xl font-bold text-emerald-600">{todos.filter(t => t.completed && t.active).length}</div>
-                      <div className="text-xs text-emerald-600 font-medium mt-1">Completed</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-rose-600">{todos.filter(t => !t.completed && t.active).length}</div>
-                      <div className="text-xs text-rose-600 font-medium mt-1">Pending</div>
-                    </div>
-                  </div>
-                  {todos.map((todo, index) => (
-                    <div key={todo.id}>
-                      <div className={`flex items-center gap-4 py-4 px-4 rounded-xl transition-all ${todo.active ? 'bg-white hover:bg-slate-50' : 'bg-slate-50 opacity-60'}`}>
-                        <div className={`flex-shrink-0 w-7 h-7 rounded-lg border-2 flex items-center justify-center ${
-                          todo.completed && todo.active ? 'bg-gradient-to-br from-emerald-400 to-teal-500 border-emerald-400' : todo.active ? 'border-slate-300 bg-white' : 'border-slate-200 bg-slate-100'
-                        }`}>
-                          {todo.completed && todo.active && <Check size={18} className="text-white" strokeWidth={3} />}
-                        </div>
-                        <span className={`flex-1 text-sm ${
-                          todo.completed && todo.active ? 'line-through text-slate-400' : todo.active ? 'text-slate-700 font-medium' : 'text-slate-400 line-through'
-                        }`}>{todo.title}</span>
-                        <div className="flex items-center gap-2">
-                          {todo.active ? (
-                            <>
-                              {todo.completed ? (
-                                <span className="px-3 py-1.5 bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 rounded-lg text-xs font-semibold border border-emerald-200">Done</span>
-                              ) : (
-                                <span className="px-3 py-1.5 bg-gradient-to-r from-amber-50 to-orange-50 text-amber-700 rounded-lg text-xs font-semibold border border-amber-200">Pending</span>
-                              )}
-                            </>
-                          ) : (
-                            <span className="px-3 py-1.5 bg-slate-100 text-slate-500 rounded-lg text-xs font-semibold border border-slate-200">Deleted</span>
-                          )}
-                          <span className="text-xs text-slate-400 font-medium">
-                            {new Date(todo.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
+
+                {(() => {
+                  const notification = getPerformanceNotification(monthlyPoints.total_points);
+                  return (
+                    <div className="mb-6 p-4 bg-gray-900/50 border border-white/5 rounded-xl flex items-center gap-4">
+                      <span className="text-2xl drop-shadow-[0_0_5px_rgba(255,255,255,0.5)]">{notification.icon}</span>
+                      <div>
+                        <div className="text-[10px] text-gray-500 font-mono uppercase tracking-widest mb-1">Phase Status</div>
+                        <div className="text-sm font-medium text-gray-300">{notification.text}</div>
                       </div>
-                      {index < todos.length - 1 && <div className="border-b border-slate-100"></div>}
+                    </div>
+                  );
+                })()}
+
+                <div className="w-full bg-gray-900 rounded-full h-1.5 mb-6 overflow-hidden border border-white/5">
+                  <div
+                    className="h-full bg-gradient-to-r from-fuchsia-500 to-rose-400 relative"
+                    style={{ width: `${(monthlyPoints.total_points / 10) * 100}%` }}
+                  >
+                    <div className="absolute top-0 right-0 bottom-0 w-20 bg-gradient-to-r from-transparent to-white/30 animate-pulse"></div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-[10px] font-mono tracking-widest uppercase text-gray-500 mb-6">
+                  <span>Phase {monthlyPoints.month} • Y{monthlyPoints.year}</span>
+                  <span className="text-fuchsia-400">{((monthlyPoints.total_points / 10) * 100).toFixed(0)}% Yield</span>
+                </div>
+
+                <button onClick={calculateMonthlyPoints} className="w-full bg-fuchsia-600/20 text-fuchsia-400 border border-fuchsia-500/30 hover:bg-fuchsia-600/40 py-3 rounded-xl font-semibold text-xs tracking-widest uppercase transition-all shadow-[0_0_15px_rgba(217,70,239,0.1)]">
+                  Recalculate Phase
+                </button>
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-gray-900/30 rounded-2xl border border-white/5">
+                <Trophy className="text-gray-600 mx-auto mb-3" size={36} />
+                <p className="text-gray-500 text-sm mb-4">No phase data found</p>
+                <button onClick={calculateMonthlyPoints} className="px-6 py-2 bg-fuchsia-600/20 text-fuchsia-400 border border-fuchsia-500/30 rounded-xl text-xs font-semibold tracking-widest uppercase">
+                  Compute Phase
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Chart Section */}
+        <div className="dash-glass rounded-3xl p-8 mb-8 relative">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h3 className="text-2xl font-bold text-gray-200 mb-1">Telemetry Graph</h3>
+              <p className="text-[10px] text-gray-500 font-mono tracking-widest uppercase">30-Day Efficiency Plot</p>
+            </div>
+            <div className="flex items-center gap-4">
+              {performanceHistory.length > 0 && (
+                <div className="text-right">
+                  <div className="text-2xl font-light text-cyan-400 font-mono">
+                    {performanceHistory[performanceHistory.length - 1]?.percentage.toFixed(1)}<span className="text-sm">%</span>
+                  </div>
+                </div>
+              )}
+              <div className="p-2 bg-gray-800 border border-white/10 rounded-lg">
+                <BarChart3 className="text-cyan-500" size={20} />
+              </div>
+            </div>
+          </div>
+
+          {performanceHistory.length > 0 ? (
+            <div className="h-80 w-full bg-gray-900/50 rounded-2xl p-4 border border-white/5">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={performanceHistory} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorCyan" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    stroke="#475569"
+                    tick={{ fill: '#64748b', fontSize: 10, fontFamily: 'monospace' }}
+                    tickLine={{ stroke: '#1e293b' }}
+                    axisLine={{ stroke: '#1e293b' }}
+                  />
+                  <YAxis
+                    stroke="#475569"
+                    tick={{ fill: '#64748b', fontSize: 10, fontFamily: 'monospace' }}
+                    tickLine={{ stroke: '#1e293b' }}
+                    axisLine={{ stroke: '#1e293b' }}
+                    domain={[0, 100]}
+                    ticks={[0, 25, 50, 75, 100]}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                      border: '1px solid rgba(6, 182, 212, 0.3)',
+                      borderRadius: '12px',
+                      color: '#e2e8f0',
+                      boxShadow: '0 0 20px rgba(6, 182, 212, 0.2)'
+                    }}
+                    itemStyle={{ color: '#22d3ee', fontWeight: 'bold' }}
+                    labelStyle={{ color: '#94a3b8', fontSize: '12px', marginBottom: '4px' }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="percentage"
+                    stroke="#06b6d4"
+                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill="url(#colorCyan)"
+                    activeDot={{ r: 6, fill: '#06b6d4', stroke: '#0f172a', strokeWidth: 2 }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="text-center py-20 bg-gray-900/30 rounded-2xl border border-white/5">
+              <BarChart3 className="text-gray-700 mx-auto mb-4" size={40} />
+              <p className="text-gray-500 font-mono text-sm tracking-widest uppercase mb-1">Insufficient Data</p>
+              <p className="text-xs text-gray-600">Complete objectives to generate telemetry</p>
+            </div>
+          )}
+        </div>
+
+        {/* Task Log Inspector */}
+        <div className="dash-glass rounded-3xl p-8">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 pb-6 border-b border-white/5 gap-4">
+            <div>
+              <h3 className="text-xl font-bold text-gray-200 mb-1">System Log Inspector</h3>
+              <p className="text-[10px] text-gray-500 font-mono tracking-widest uppercase">Query historical task data</p>
+            </div>
+            <div className="flex items-center gap-3 w-full md:w-auto">
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                max={new Date().toISOString().split('T')[0]}
+                className="dash-input px-4 py-2 rounded-xl text-sm w-full md:w-auto"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {todos.length === 0 ? (
+              <div className="text-center py-16 bg-gray-900/30 rounded-2xl border border-white/5">
+                <Target className="text-gray-700 mx-auto mb-4" size={40} />
+                <p className="text-gray-500 font-mono text-sm tracking-widest uppercase mb-1">No logs found</p>
+                <p className="text-xs text-gray-600">No objectives were initialized on this cycle</p>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-3 gap-4 mb-6 p-4 bg-gray-900/50 rounded-2xl border border-white/5">
+                  <div className="text-center">
+                    <div className="text-2xl font-light text-cyan-400">{todos.length}</div>
+                    <div className="text-[10px] text-gray-500 font-mono tracking-widest uppercase mt-1">Found</div>
+                  </div>
+                  <div className="text-center border-x border-white/10">
+                    <div className="text-2xl font-light text-emerald-400">{todos.filter(t => t.completed && t.active).length}</div>
+                    <div className="text-[10px] text-emerald-600/70 font-mono tracking-widest uppercase mt-1">Success</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-light text-rose-400">{todos.filter(t => !t.completed && t.active).length}</div>
+                    <div className="text-[10px] text-rose-600/70 font-mono tracking-widest uppercase mt-1">Failed</div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  {todos.map((todo) => (
+                    <div key={todo.id} className={`flex flex-wrap md:flex-nowrap items-center gap-4 p-4 rounded-xl border ${todo.active ? 'bg-gray-800/40 border-white/5 hover:bg-gray-800' : 'bg-gray-900/30 border-transparent opacity-50'}`}>
+                      <div className={`flex-shrink-0 w-6 h-6 rounded border flex items-center justify-center ${todo.completed && todo.active
+                          ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400'
+                          : todo.active
+                            ? 'border-gray-600 bg-transparent'
+                            : 'border-gray-800 bg-gray-900 text-gray-700'
+                        }`}>
+                        {todo.completed && <Check size={14} />}
+                      </div>
+
+                      <span className={`flex-1 text-sm ${todo.completed && todo.active ? 'line-through text-gray-500' : todo.active ? 'text-gray-300' : 'text-gray-600 line-through'
+                        }`}>
+                        {todo.title}
+                      </span>
+
+                      <div className="flex items-center gap-3 ml-auto mt-2 md:mt-0">
+                        {todo.active ? (
+                          todo.completed ? (
+                            <span className="px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 rounded text-[10px] font-mono uppercase tracking-wider">Executed</span>
+                          ) : (
+                            <span className="px-2 py-1 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded text-[10px] font-mono uppercase tracking-wider">Pending</span>
+                          )
+                        ) : (
+                          <span className="px-2 py-1 bg-gray-800 border border-gray-700 text-gray-500 rounded text-[10px] font-mono uppercase tracking-wider">Terminated</span>
+                        )}
+                        <span className="text-[10px] font-mono text-cyan-700">
+                          {new Date(todo.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                        </span>
+                      </div>
                     </div>
                   ))}
-                </>
-              )}
-            </div>
+                </div>
+              </>
+            )}
           </div>
 
         </div>
