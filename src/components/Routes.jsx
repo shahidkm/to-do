@@ -8,6 +8,8 @@ import QuoteTabs from "./QuoteTabs";
 import PreviousTodos from "./PreviousTodos";
 import AchievementsPage from "./AchievementsPage";
 import FriendsPage from "./FriendsPage";
+import MoneyPage from "./MoneyPage";
+
 function RoutesConfig() {
     return (
         <Router>
@@ -18,8 +20,9 @@ function RoutesConfig() {
                 <Route path="/plans" element={<PlansPage />} />
                 <Route path="/inspirations" element={<QuoteTabs />} />
                 <Route path="/previous-todos" element={<PreviousTodos />} />
-                 <Route path="/achievements" element={<AchievementsPage />} />
-                    <Route path="/freinds" element={<FriendsPage />} />
+                <Route path="/achievements" element={<AchievementsPage />} />
+                <Route path="/freinds" element={<FriendsPage />} />
+                <Route path="/money" element={<MoneyPage />} />
             </Routes>
         </Router>
     );

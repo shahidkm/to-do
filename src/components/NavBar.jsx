@@ -10,6 +10,7 @@ const NAV_LINKS = [
   { label: "Previous", path: "/previous-todos" },
   { label: "Achievements", path: "/achievements" },
   { label: "Friends", path: "/freinds" },
+  { label: "Money Vault", path: "/money" },
 ];
 
 const CSS = `
