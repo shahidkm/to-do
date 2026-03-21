@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { Plus, IndianRupee, ArrowDownToLine, ArrowUpFromLine, Search, Filter, PlusCircle, CheckCircle2, Edit2, Trash2, X } from "lucide-react";
+import { PieChart as PieChartIcon, BarChart3, TrendingUp, TrendingDown, IndianRupee, Search, Filter, Plus, PlusCircle, CheckCircle2, Edit2, Trash2, X } from "lucide-react";
 import Navbar from "./NavBar";
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
+import Chart from "react-apexcharts";
+import { motion, AnimatePresence } from "framer-motion";
 
 const supabaseUrl = "https://quufeiwzsgiuwkeyjjns.supabase.co";
 const supabaseAnonKey =
@@ -22,10 +23,18 @@ export default function MoneyPage() {
         totalExpense: 0
     });
 
-    const [expenseData, setExpenseData] = useState([]);
-    const [incomeData, setIncomeData] = useState([]);
+    const NEON_COLORS = [
+        '#00e5ff', // cyan
+        '#7c4dff', // purple
+        '#ff3366', // rose
+        '#00e676', // emerald
+        '#ffea00', // yellow
+        '#ff9100', // orange
+        '#00b0ff'  // light blue
+    ];
 
-    const COLORS = ['#00e5ff', '#7c4dff', '#ff3366', '#00e676', '#ffea00', '#ff9100', '#00b0ff'];
+    const [expenseData, setExpenseData] = useState({ series: [], options: {} });
+    const [incomeData, setIncomeData] = useState({ series: [], options: {} });
 
     const [form, setForm] = useState({
         title: "",
@@ -78,8 +87,92 @@ export default function MoneyPage() {
             totalExpense: expense
         });
 
-        setExpenseData(Object.keys(expMap).map(k => ({ name: k, value: expMap[k] })).sort((a, b) => b.value - a.value));
-        setIncomeData(Object.keys(incMap).map(k => ({ name: k, value: incMap[k] })).sort((a, b) => b.value - a.value));
+        const sortedExp = Object.keys(expMap).map(k => ({ name: k, value: expMap[k] })).sort((a, b) => b.value - a.value);
+        const sortedInc = Object.keys(incMap).map(k => ({ name: k, value: incMap[k] })).sort((a, b) => b.value - a.value);
+
+        setExpenseData({
+            series: sortedExp.map(d => d.value),
+            options: {
+                chart: { type: 'donut', background: 'transparent', foreColor: '#94a3b8' },
+                labels: sortedExp.map(d => d.name),
+                colors: NEON_COLORS,
+                stroke: { show: false },
+                dataLabels: { enabled: false },
+                legend: {
+                    position: 'bottom',
+                    fontFamily: 'monospace',
+                    labels: { colors: '#94a3b8' }
+                },
+                plotOptions: {
+                    pie: {
+                        donut: {
+                            size: '75%',
+                            background: 'transparent',
+                            labels: {
+                                show: true,
+                                name: { show: true, fontSize: '12px', fontFamily: 'monospace', color: '#64748b' },
+                                value: {
+                                    show: true,
+                                    fontSize: '20px',
+                                    fontFamily: 'monospace',
+                                    fontWeight: 'bold',
+                                    color: '#f1f5f9',
+                                    formatter: (val) => `₹${Number(val).toLocaleString()}`
+                                },
+                                total: {
+                                    show: true,
+                                    label: 'EXPENSES',
+                                    fontFamily: 'monospace',
+                                    color: '#64748b',
+                                    formatter: () => `₹${expense.toLocaleString()}`
+                                }
+                            }
+                        }
+                    }
+                },
+                tooltip: {
+                    theme: 'dark',
+                    y: { formatter: (val) => `₹${val.toLocaleString()}` }
+                }
+            }
+        });
+
+        setIncomeData({
+            series: [{
+                name: 'Volume',
+                data: sortedInc.map(d => d.value)
+            }],
+            options: {
+                chart: { type: 'bar', toolbar: { show: false }, background: 'transparent' },
+                plotOptions: {
+                    bar: {
+                        borderRadius: 6,
+                        horizontal: true,
+                        barHeight: '60%',
+                        distributed: true
+                    }
+                },
+                colors: NEON_COLORS.slice().reverse(),
+                dataLabels: { enabled: false },
+                xaxis: {
+                    categories: sortedInc.map(d => d.name),
+                    labels: {
+                        style: { colors: '#94a3b8', fontFamily: 'monospace' },
+                        formatter: (val) => `₹${val}`
+                    },
+                    axisBorder: { show: false },
+                    axisTicks: { show: false }
+                },
+                yaxis: {
+                    labels: { style: { colors: '#f1f5f9', fontFamily: 'monospace' } }
+                },
+                grid: { borderColor: 'rgba(255,255,255,0.05)', strokeDashArray: 4 },
+                tooltip: {
+                    theme: 'dark',
+                    y: { formatter: (val) => `₹${val.toLocaleString()}` }
+                }
+            }
+        });
 
         setLoading(false);
     }
@@ -173,13 +266,17 @@ export default function MoneyPage() {
     };
 
     const getTypeIcon = (type) => {
-        if (type === 'income') return <ArrowDownToLine size={20} className="text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]" />;
-        if (type === 'expense') return <ArrowUpFromLine size={20} className="text-rose-400 drop-shadow-[0_0_8px_rgba(2fb,113,133,0.5)]" />;
+        if (type === 'income') return <TrendingUp size={20} className="text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]" />;
+        if (type === 'expense') return <TrendingDown size={20} className="text-rose-400 drop-shadow-[0_0_8px_rgba(2fb,113,133,0.5)]" />;
         return <IndianRupee size={20} className="text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]" />;
     };
 
     return (
-        <div className="animate-slideIn" style={{ animationDelay: '0.1s' }}>
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="min-h-screen bg-[#020617] text-slate-200"
+        >
             <Navbar />
             <style>{`
         .dash-glass {
@@ -215,7 +312,12 @@ export default function MoneyPage() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
                 {/* Header + Overview */}
-                <div className="text-center mb-10 relative">
+                <motion.div
+                    initial={{ y: -20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.1 }}
+                    className="text-center mb-10 relative"
+                >
                     <div className="absolute right-0 top-0 hidden md:block group">
                         <button
                             onClick={() => setFormOpen(!formOpen)}
@@ -245,10 +347,15 @@ export default function MoneyPage() {
                             New Transaction
                         </button>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* Balance Overview Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                    className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10"
+                >
                     <div className="dash-glass p-6 rounded-2xl border-l-[4px] border-l-cyan-500 flex flex-col items-center justify-center relative overflow-hidden">
                         <div className="absolute right-[-20%] top-[-20%] opacity-10">
                             <IndianRupee size={150} />
@@ -263,16 +370,16 @@ export default function MoneyPage() {
                         <h2 className="text-3xl font-bold text-emerald-400">
                             ₹{balanceDetails.totalIncome.toLocaleString()}
                         </h2>
-                        <ArrowDownToLine className="absolute bottom-4 right-4 text-emerald-500/20" size={40} />
+                        <TrendingUp className="absolute bottom-4 right-4 text-emerald-500/20" size={40} />
                     </div>
                     <div className="dash-glass p-6 rounded-2xl border-l-[4px] border-l-rose-500 flex flex-col items-center justify-center relative overflow-hidden">
                         <p className="text-xs font-mono tracking-widest text-rose-400/70 uppercase mb-2">Total Expenses</p>
                         <h2 className="text-3xl font-bold text-rose-400">
                             ₹{balanceDetails.totalExpense.toLocaleString()}
                         </h2>
-                        <ArrowUpFromLine className="absolute bottom-4 right-4 text-rose-500/20" size={40} />
+                        <TrendingDown className="absolute bottom-4 right-4 text-rose-500/20" size={40} />
                     </div>
-                </div>
+                </motion.div>
 
                 {/* Create Transaction Form */}
                 {formOpen && (
@@ -376,81 +483,56 @@ export default function MoneyPage() {
                 )}
 
                 {/* Charts Overview */}
-                {(expenseData.length > 0 || incomeData.length > 0) && (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
-                        {/* Expenses Pie Chart */}
-                        <div className="dash-glass p-6 rounded-2xl relative overflow-hidden">
-                            <h3 className="text-xl font-bold text-gray-200 mb-6 flex items-center gap-2">
-                                <ArrowUpFromLine size={20} className="text-rose-400" />
-                                Ledger: Expenses
-                            </h3>
-                            {expenseData.length > 0 ? (
-                                <div className="h-[300px] w-full">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <PieChart>
-                                            <Pie
-                                                data={expenseData}
-                                                cx="50%"
-                                                cy="50%"
-                                                innerRadius={60}
-                                                outerRadius={100}
-                                                paddingAngle={5}
-                                                dataKey="value"
-                                            >
-                                                {expenseData.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                                ))}
-                                            </Pie>
-                                            <Tooltip
-                                                contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', color: '#fff' }}
-                                                itemStyle={{ color: '#fff' }}
-                                                formatter={(value) => `₹${value.toLocaleString()}`}
-                                            />
-                                            <Legend verticalAlign="bottom" height={36} wrapperStyle={{ color: '#e2e8f0', fontSize: '12px', fontFamily: 'monospace' }} />
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            ) : (
-                                <div className="h-[300px] flex items-center justify-center text-gray-500 font-mono text-xs uppercase tracking-widest">
-                                    No outbound flow detected
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Income Bar Chart */}
-                        <div className="dash-glass p-6 rounded-2xl relative overflow-hidden">
-                            <h3 className="text-xl font-bold text-gray-200 mb-6 flex items-center gap-2">
-                                <ArrowDownToLine size={20} className="text-emerald-400" />
-                                Ledger: Income Flow
-                            </h3>
-                            {incomeData.length > 0 ? (
-                                <div className="h-[300px] w-full text-xs font-mono">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={incomeData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
-                                            <XAxis type="number" stroke="rgba(255,255,255,0.2)" tickFormatter={(value) => `₹${value}`} />
-                                            <YAxis type="category" dataKey="name" stroke="rgba(255,255,255,0.2)" width={80} />
-                                            <Tooltip
-                                                cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                                                contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', color: '#fff' }}
-                                                formatter={(value) => [`₹${value.toLocaleString()}`, 'Amount']}
-                                            />
-                                            <Bar dataKey="value" name="Volume" radius={[0, 4, 4, 0]}>
-                                                {incomeData.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={COLORS[(index + 3) % COLORS.length]} />
-                                                ))}
-                                            </Bar>
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            ) : (
-                                <div className="h-[300px] flex items-center justify-center text-gray-500 font-mono text-xs uppercase tracking-widest">
-                                    No inbound signal detected
-                                </div>
-                            )}
-                        </div>
+                <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10"
+                >
+                    {/* Expenses Doughnut Chart */}
+                    <div className="dash-glass p-6 rounded-2xl relative overflow-hidden">
+                        <h3 className="text-xl font-bold text-gray-200 mb-6 flex items-center gap-2">
+                            <PieChartIcon size={20} className="text-rose-400" />
+                            Ledger: Outbound Flow
+                        </h3>
+                        {expenseData.series?.length > 0 ? (
+                            <div className="h-[300px] w-full">
+                                <Chart
+                                    options={expenseData.options}
+                                    series={expenseData.series}
+                                    type="donut"
+                                    height="100%"
+                                />
+                            </div>
+                        ) : (
+                            <div className="h-[300px] flex items-center justify-center text-gray-500 font-mono text-xs uppercase tracking-widest">
+                                No outbound flow detected
+                            </div>
+                        )}
                     </div>
-                )}
+
+                    {/* Income Bar Chart */}
+                    <div className="dash-glass p-6 rounded-2xl relative overflow-hidden">
+                        <h3 className="text-xl font-bold text-gray-200 mb-6 flex items-center gap-2">
+                            <BarChart3 size={20} className="text-emerald-400" />
+                            Ledger: Inbound Channels
+                        </h3>
+                        {incomeData.series?.[0]?.data?.length > 0 ? (
+                            <div className="h-[300px] w-full">
+                                <Chart
+                                    options={incomeData.options}
+                                    series={incomeData.series}
+                                    type="bar"
+                                    height="100%"
+                                />
+                            </div>
+                        ) : (
+                            <div className="h-[300px] flex items-center justify-center text-gray-500 font-mono text-xs uppercase tracking-widest">
+                                No inbound signal detected
+                            </div>
+                        )}
+                    </div>
+                </motion.div>
 
                 {/* Transactions List */}
                 <h3 className="text-xl font-bold text-gray-200 mb-6 flex items-center gap-2">
@@ -548,6 +630,6 @@ export default function MoneyPage() {
                     )
                 }
             </div>
-        </div>
+        </motion.div>
     );
 }

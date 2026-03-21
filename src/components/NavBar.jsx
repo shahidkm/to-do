@@ -11,6 +11,7 @@ const NAV_LINKS = [
   { label: "Achievements", path: "/achievements" },
   { label: "Friends", path: "/freinds" },
   { label: "Money Vault", path: "/money" },
+  { label: "Manners", path: "/manners" },
 ];
 
 const CSS = `

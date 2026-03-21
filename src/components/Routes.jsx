@@ -9,6 +9,7 @@ import PreviousTodos from "./PreviousTodos";
 import AchievementsPage from "./AchievementsPage";
 import FriendsPage from "./FriendsPage";
 import MoneyPage from "./MoneyPage";
+import MannersPage from "./MannersPage";
 
 function RoutesConfig() {
     return (
@@ -23,6 +24,7 @@ function RoutesConfig() {
                 <Route path="/achievements" element={<AchievementsPage />} />
                 <Route path="/freinds" element={<FriendsPage />} />
                 <Route path="/money" element={<MoneyPage />} />
+                <Route path="/manners" element={<MannersPage />} />
             </Routes>
         </Router>
     );
