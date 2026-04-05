@@ -18,6 +18,11 @@ import {
 import Navbar from "./NavBar";
 
 const MANNERS = [
+      {
+        title: "Don't Smoke",
+        description: "Smoking is not only harmful to your health but also unpleasant for those around you. A gentleman respects the comfort of others.",
+        icon: <Heart className="text-rose-400" />
+    },
     {
         title: "Respect Everyone",
         description: "Treat everyone with respect—regardless of their status, job, or background. A gentleman is kind to everyone, not just when it benefits him.",
