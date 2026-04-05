@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { PieChart as PieChartIcon, BarChart3, TrendingUp, TrendingDown, IndianRupee, Search, Filter, Plus, PlusCircle, CheckCircle2, Edit2, Trash2, X } from "lucide-react";
+import { PieChart as PieChartIcon, BarChart3, TrendingUp, TrendingDown, IndianRupee, Search, Filter, Plus, PlusCircle, CheckCircle2, Edit2, Trash2, X, ShoppingCart, Check } from "lucide-react";
 import Navbar from "./NavBar";
 import Chart from "react-apexcharts";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,6 +16,14 @@ export default function MoneyPage() {
     const [loading, setLoading] = useState(false);
     const [formOpen, setFormOpen] = useState(false);
     const [editingId, setEditingId] = useState(null);
+    const [activeTab, setActiveTab] = useState("transactions");
+    const [shoppingPlans, setShoppingPlans] = useState([]);
+    const [completedPlans, setCompletedPlans] = useState([]);
+    const [shopForm, setShopForm] = useState({ name: "", amount: "" });
+    const [shopLoading, setShopLoading] = useState(false);
+    const [editingShopId, setEditingShopId] = useState(null);
+    const [editShopForm, setEditShopForm] = useState({ name: "", amount: "" });
+    const [showCompleted, setShowCompleted] = useState(false);
 
     const [balanceDetails, setBalanceDetails] = useState({
         totalBalance: 0,
@@ -46,7 +54,65 @@ export default function MoneyPage() {
 
     useEffect(() => {
         fetchTransactions();
+        fetchShoppingPlans();
     }, []);
+
+    async function fetchShoppingPlans() {
+        const [{ data: active }, { data: done }] = await Promise.all([
+            supabase.from("shopping_plans").select("*").eq("completed", false).order("created_at", { ascending: false }),
+            supabase.from("shopping_plans").select("*").eq("completed", true).order("created_at", { ascending: false }).limit(50),
+        ]);
+        setShoppingPlans(active || []);
+        setCompletedPlans(done || []);
+    }
+
+    async function addShoppingItem(e) {
+        e.preventDefault();
+        if (!shopForm.name.trim() || !shopForm.amount) return;
+        setShopLoading(true);
+        await supabase.from("shopping_plans").insert({
+            name: shopForm.name.trim(),
+            amount: Number(shopForm.amount),
+        });
+        setShopForm({ name: "", amount: "" });
+        await fetchShoppingPlans();
+        setShopLoading(false);
+    }
+
+    async function saveEditShopItem(e) {
+        e.preventDefault();
+        if (!editShopForm.name.trim() || !editShopForm.amount) return;
+        setShopLoading(true);
+        await supabase.from("shopping_plans").update({
+            name: editShopForm.name.trim(),
+            amount: Number(editShopForm.amount),
+        }).eq("id", editingShopId);
+        setEditingShopId(null);
+        await fetchShoppingPlans();
+        setShopLoading(false);
+    }
+
+    async function completeShoppingItem(item) {
+        setShopLoading(true);
+        await supabase.from("shopping_plans").update({ completed: true }).eq("id", item.id);
+        await supabase.from("money_transactions").insert({
+            title: item.name,
+            amount: item.amount,
+            type: "expense",
+            category: "Shopping",
+            date: new Date().toISOString().split('T')[0],
+        });
+        await fetchShoppingPlans();
+        await fetchTransactions();
+        setShopLoading(false);
+    }
+
+    async function deleteShoppingItem(id) {
+        setShopLoading(true);
+        await supabase.from("shopping_plans").delete().eq("id", id);
+        await fetchShoppingPlans();
+        setShopLoading(false);
+    }
 
     async function fetchTransactions() {
         setLoading(true);
@@ -267,50 +333,48 @@ export default function MoneyPage() {
 
     const getTypeIcon = (type) => {
         if (type === 'income') return <TrendingUp size={20} className="text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]" />;
-        if (type === 'expense') return <TrendingDown size={20} className="text-rose-400 drop-shadow-[0_0_8px_rgba(2fb,113,133,0.5)]" />;
+        if (type === 'expense') return <TrendingDown size={20} className="text-rose-400 drop-shadow-[0_0_8px_rgba(251,113,133,0.5)]" />;
         return <IndianRupee size={20} className="text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]" />;
     };
 
     return (
-        <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="min-h-screen bg-[#020617] text-slate-200"
-        >
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-[#020617] text-slate-200">
             <Navbar />
             <style>{`
-        .dash-glass {
-          background: rgba(15, 23, 42, 0.6);
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-        }
-        .dash-input {
-          background: rgba(30, 41, 59, 0.5);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          color: #e2e8f0;
-          transition: all 0.3s ease;
-        }
-        .dash-input:focus {
-          border-color: rgba(34, 211, 238, 0.5);
-          box-shadow: 0 0 10px rgba(34, 211, 238, 0.2);
-          outline: none;
-        }
-        .dash-btn {
-          background: linear-gradient(to right, rgba(14, 165, 233, 0.8), rgba(59, 130, 246, 0.8));
-          color: white;
-          border: 1px solid rgba(14, 165, 233, 0.5);
-          transition: all 0.3s ease;
-        }
-        .dash-btn:hover {
-          background: linear-gradient(to right, rgba(14, 165, 233, 1), rgba(59, 130, 246, 1));
-          box-shadow: 0 0 15px rgba(14, 165, 233, 0.4);
-        }
+        .dash-glass { background: rgba(15,23,42,0.6); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+        .dash-input { background: rgba(30,41,59,0.5); border: 1px solid rgba(255,255,255,0.1); color: #e2e8f0; transition: all 0.3s ease; }
+        .dash-input:focus { border-color: rgba(34,211,238,0.5); box-shadow: 0 0 10px rgba(34,211,238,0.2); outline: none; }
+        .dash-btn { background: linear-gradient(to right, rgba(14,165,233,0.8), rgba(59,130,246,0.8)); color: white; border: 1px solid rgba(14,165,233,0.5); transition: all 0.3s ease; }
+        .dash-btn:hover { background: linear-gradient(to right, rgba(14,165,233,1), rgba(59,130,246,1)); box-shadow: 0 0 15px rgba(14,165,233,0.4); }
       `}</style>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
+                {/* Tab Switcher */}
+                <div className="flex gap-2 mb-8 dash-glass p-1 rounded-xl w-fit">
+                    <button
+                        onClick={() => setActiveTab("transactions")}
+                        className={`px-5 py-2 rounded-lg text-xs font-mono tracking-widest uppercase transition-all ${
+                            activeTab === "transactions"
+                                ? "bg-gradient-to-r from-cyan-500/30 to-blue-500/30 text-cyan-300 border border-cyan-500/30"
+                                : "text-gray-500 hover:text-gray-300"
+                        }`}
+                    >
+                        <span className="flex items-center gap-2"><IndianRupee size={13} /> Finance Vault</span>
+                    </button>
+                    <button
+                        onClick={() => setActiveTab("shopping")}
+                        className={`px-5 py-2 rounded-lg text-xs font-mono tracking-widest uppercase transition-all ${
+                            activeTab === "shopping"
+                                ? "bg-gradient-to-r from-violet-500/30 to-purple-500/30 text-violet-300 border border-violet-500/30"
+                                : "text-gray-500 hover:text-gray-300"
+                        }`}
+                    >
+                        <span className="flex items-center gap-2"><ShoppingCart size={13} /> Shopping Plan</span>
+                    </button>
+                </div>
+
+                {activeTab === "transactions" && <>
                 {/* Header + Overview */}
                 <motion.div
                     initial={{ y: -20, opacity: 0 }}
@@ -483,6 +547,7 @@ export default function MoneyPage() {
                 )}
 
                 {/* Charts Overview */}
+
                 <motion.div
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
@@ -629,6 +694,192 @@ export default function MoneyPage() {
                         </div>
                     )
                 }
+                </>
+                }
+
+                {activeTab === "shopping" && (
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
+                        {/* Header */}
+                        <div className="text-center mb-10 relative">
+                            <div className="inline-flex items-center justify-center p-4 dash-glass rounded-2xl mb-4 text-violet-400 border border-violet-500/30 shadow-[0_0_20px_rgba(139,92,246,0.2)]">
+                                <ShoppingCart size={42} strokeWidth={2} />
+                            </div>
+                            <h1 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-gray-100 via-white to-gray-400 mb-2 tracking-wide">Shopping Plan</h1>
+                            <p className="text-violet-400/60 font-mono text-sm tracking-widest uppercase">Plan Before You Spend</p>
+                        </div>
+
+                        {/* Add Form */}
+                        <div className="dash-glass rounded-3xl p-6 md:p-8 mb-6 relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-violet-500/0 via-violet-500 to-violet-500/0 opacity-50"></div>
+                            <h2 className="text-xl font-bold text-gray-200 mb-6 flex items-center gap-3 pb-4 border-b border-white/5">
+                                <ShoppingCart className="text-violet-400" size={22} />
+                                Add Shopping Item
+                            </h2>
+                            <form onSubmit={addShoppingItem} className="grid gap-4 md:grid-cols-3">
+                                <div>
+                                    <label className="text-[10px] font-mono tracking-widest uppercase text-gray-400 mb-2 block">Item Name *</label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. Groceries, Shoes"
+                                        className="dash-input w-full px-4 py-3 rounded-xl placeholder-gray-600"
+                                        value={shopForm.name}
+                                        onChange={(e) => setShopForm({ ...shopForm, name: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-mono tracking-widest uppercase text-gray-400 mb-2 block">Est. Amount (₹) *</label>
+                                    <input
+                                        type="number" min="0" step="0.01" placeholder="0.00"
+                                        className="dash-input w-full px-4 py-3 rounded-xl placeholder-gray-600"
+                                        value={shopForm.amount}
+                                        onChange={(e) => setShopForm({ ...shopForm, amount: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div className="flex items-end">
+                                    <button type="submit" disabled={shopLoading}
+                                        className="w-full py-3 bg-gradient-to-r from-violet-500/80 to-purple-600/80 hover:from-violet-500 hover:to-purple-600 text-white rounded-xl text-xs font-semibold tracking-widest uppercase border border-violet-500/50 transition-all disabled:opacity-50"
+                                    >
+                                        <span className="flex items-center justify-center gap-2"><Plus size={14} /> Add to Plan</span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        {/* Total bar */}
+                        {shoppingPlans.length > 0 && (
+                            <div className="dash-glass rounded-2xl px-6 py-4 mb-4 flex items-center justify-between">
+                                <span className="text-xs font-mono tracking-widest uppercase text-gray-400">{shoppingPlans.length} item{shoppingPlans.length !== 1 ? 's' : ''} planned</span>
+                                <span className="font-mono font-bold text-violet-300 text-lg">
+                                    Total ₹{shoppingPlans.reduce((s, i) => s + Number(i.amount), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </span>
+                            </div>
+                        )}
+
+                        {shoppingPlans.length === 0 ? (
+                            <div className="text-center py-16 dash-glass rounded-3xl">
+                                <ShoppingCart className="mx-auto text-gray-600 mb-4" size={48} strokeWidth={1.5} />
+                                <p className="text-gray-500 font-mono text-xs tracking-widest uppercase">No items in shopping plan</p>
+                            </div>
+                        ) : (
+                            <div className="dash-glass rounded-2xl overflow-hidden">
+                                <div className="hidden md:grid grid-cols-12 gap-4 p-4 border-b border-white/5 bg-gray-900/50 text-xs font-mono tracking-widest uppercase text-gray-400">
+                                    <div className="col-span-5">Item</div>
+                                    <div className="col-span-3 text-right">Est. Amount</div>
+                                    <div className="col-span-4 text-center">Actions</div>
+                                </div>
+                                <div className="divide-y divide-white/5">
+                                    {shoppingPlans.map((item) => (
+                                        <div key={item.id}>
+                                            {editingShopId === item.id ? (
+                                                <form onSubmit={saveEditShopItem} className="p-4 grid md:grid-cols-12 md:gap-4 md:items-center bg-violet-500/5">
+                                                    <div className="col-span-5 mb-2 md:mb-0">
+                                                        <input
+                                                            type="text"
+                                                            className="dash-input w-full px-3 py-2 rounded-lg text-sm"
+                                                            value={editShopForm.name}
+                                                            onChange={(e) => setEditShopForm({ ...editShopForm, name: e.target.value })}
+                                                            required autoFocus
+                                                        />
+                                                    </div>
+                                                    <div className="col-span-3 mb-2 md:mb-0">
+                                                        <input
+                                                            type="number" min="0" step="0.01"
+                                                            className="dash-input w-full px-3 py-2 rounded-lg text-sm text-right"
+                                                            value={editShopForm.amount}
+                                                            onChange={(e) => setEditShopForm({ ...editShopForm, amount: e.target.value })}
+                                                            required
+                                                        />
+                                                    </div>
+                                                    <div className="col-span-4 flex gap-2 justify-center">
+                                                        <button type="submit" disabled={shopLoading}
+                                                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-violet-500/20 text-violet-300 border border-violet-500/40 text-xs font-mono tracking-widest uppercase hover:bg-violet-500/30 transition-all disabled:opacity-50"
+                                                        >
+                                                            <CheckCircle2 size={12} /> Save
+                                                        </button>
+                                                        <button type="button" onClick={() => setEditingShopId(null)}
+                                                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gray-700/50 text-gray-400 border border-white/10 text-xs font-mono tracking-widest uppercase hover:bg-gray-700 transition-all"
+                                                        >
+                                                            <X size={12} /> Cancel
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            ) : (
+                                                <div className="p-4 md:grid md:grid-cols-12 md:gap-4 md:items-center hover:bg-white/[0.02] transition-colors group">
+                                                    <div className="col-span-5 flex items-center gap-3 mb-2 md:mb-0">
+                                                        <ShoppingCart size={16} className="text-violet-400 shrink-0" />
+                                                        <span className="text-white font-medium">{item.name}</span>
+                                                    </div>
+                                                    <div className="col-span-3 text-right font-mono font-bold text-violet-300 mb-2 md:mb-0">
+                                                        ₹{Number(item.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                    </div>
+                                                    <div className="col-span-4 flex gap-2 justify-center mt-3 md:mt-0">
+                                                        <button
+                                                            onClick={() => { setEditingShopId(item.id); setEditShopForm({ name: item.name, amount: item.amount }); }}
+                                                            disabled={shopLoading}
+                                                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 text-xs font-mono tracking-widest uppercase hover:bg-cyan-500/20 transition-all disabled:opacity-50"
+                                                        >
+                                                            <Edit2 size={12} /> Edit
+                                                        </button>
+                                                        <button
+                                                            onClick={() => completeShoppingItem(item)}
+                                                            disabled={shopLoading}
+                                                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-mono tracking-widest uppercase hover:bg-emerald-500/20 transition-all disabled:opacity-50"
+                                                        >
+                                                            <Check size={12} /> Done
+                                                        </button>
+                                                        <button
+                                                            onClick={() => deleteShoppingItem(item.id)}
+                                                            disabled={shopLoading}
+                                                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/30 text-xs font-mono tracking-widest uppercase hover:bg-rose-500/20 transition-all disabled:opacity-50"
+                                                        >
+                                                            <Trash2 size={12} /> Remove
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Completed Items */}
+                        {completedPlans.length > 0 && (
+                            <div className="mt-6">
+                                <button
+                                    onClick={() => setShowCompleted(v => !v)}
+                                    className="flex items-center gap-2 text-xs font-mono tracking-widest uppercase text-gray-400 hover:text-gray-200 transition-colors mb-3"
+                                >
+                                    <CheckCircle2 size={14} className="text-emerald-500" />
+                                    {showCompleted ? 'Hide' : 'Show'} Completed ({completedPlans.length})
+                                </button>
+                                {showCompleted && (
+                                    <div className="dash-glass rounded-2xl overflow-hidden opacity-70">
+                                        <div className="hidden md:grid grid-cols-12 gap-4 p-4 border-b border-white/5 bg-gray-900/50 text-xs font-mono tracking-widest uppercase text-gray-500">
+                                            <div className="col-span-7">Item</div>
+                                            <div className="col-span-5 text-right">Amount</div>
+                                        </div>
+                                        <div className="divide-y divide-white/5">
+                                            {completedPlans.map((item) => (
+                                                <div key={item.id} className="p-4 md:grid md:grid-cols-12 md:gap-4 md:items-center">
+                                                    <div className="col-span-7 flex items-center gap-3">
+                                                        <CheckCircle2 size={15} className="text-emerald-500/60 shrink-0" />
+                                                        <span className="text-gray-400 line-through">{item.name}</span>
+                                                    </div>
+                                                    <div className="col-span-5 text-right font-mono text-gray-500 line-through">
+                                                        ₹{Number(item.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </motion.div>
+                )}
             </div>
         </motion.div>
     );
