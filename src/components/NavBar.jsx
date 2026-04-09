@@ -5,7 +5,7 @@ import {
   Map, Sparkles, TrendingUp, ClipboardList, FolderOpen,
   Medal, Zap, Swords, Users, Wallet, Star, ScrollText,
   Brain, Activity, Trophy, ChevronDown, Menu, X,
-  GraduationCap, Gem, Clock, Heart, Images, Mic2, Shield
+  GraduationCap, Gem, Clock, Heart, Images, Mic2, Shield, Bot
 } from "lucide-react";
 
 // ─── All nav groups with every route ──────────────────────────────────────
@@ -13,6 +13,7 @@ const NAV_DIRECT = [
   { label: "Home",        path: "/",                      Icon: Home },
   { label: "Performance", path: "/performance-dashboard", Icon: Activity },
   { label: "Rewards",     path: "/reward-dashboard",      Icon: Gift },
+  { label: "AI Coach",    path: "/ai-coach",              Icon: Bot },
 ];
 
 const NAV_GROUPS = [

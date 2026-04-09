@@ -24,6 +24,7 @@ import GalleryPage from "./GalleryPage";
 import MirrorTalk from "./MirrorTalk";
 import FearCrusher from "./FearCrusher";
 import ComfortZone from "./ComfortZone";
+import AICoach from "./AICoach";
 
 function RoutesConfig() {
     return (
@@ -53,6 +54,7 @@ function RoutesConfig() {
                 <Route path="/mirror-talk" element={<MirrorTalk />} />
                 <Route path="/fear-crusher" element={<FearCrusher />} />
                 <Route path="/comfort-zone" element={<ComfortZone />} />
+                <Route path="/ai-coach" element={<AICoach />} />
             </Routes>
         </Router>
     );
