@@ -12,6 +12,7 @@ const NAV_LINKS = [
   { label: "Friends", path: "/freinds" },
   { label: "Money Vault", path: "/money" },
   { label: "Manners", path: "/manners" },
+  { label: "Life Success", path: "/life-success" },
 ];
 
 const CSS = `
