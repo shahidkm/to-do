@@ -20,6 +20,7 @@ import SkillsTracker from "./SkillsTracker";
 import BooksTracker from "./BooksTracker";
 import LevelSystem from "./LevelSystem";
 import BossChallenge from "./BossChallenge";
+import GalleryPage from "./GalleryPage";
 
 function RoutesConfig() {
     return (
@@ -45,6 +46,7 @@ function RoutesConfig() {
                 <Route path="/books" element={<BooksTracker />} />
                 <Route path="/level" element={<LevelSystem />} />
                 <Route path="/boss" element={<BossChallenge />} />
+                <Route path="/gallery" element={<GalleryPage />} />
             </Routes>
         </Router>
     );

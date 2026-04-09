@@ -5,7 +5,7 @@ import {
   Map, Sparkles, TrendingUp, ClipboardList, FolderOpen,
   Medal, Zap, Swords, Users, Wallet, Star, ScrollText,
   Brain, Activity, Trophy, ChevronDown, Menu, X,
-  GraduationCap, Gem, Clock, Heart
+  GraduationCap, Gem, Clock, Heart, Images
 } from "lucide-react";
 
 // ─── All nav groups with every route ──────────────────────────────────────
@@ -26,6 +26,7 @@ const NAV_GROUPS = [
       { label: "Daily Journal", path: "/journal",   Icon: ScrollText },
       { label: "Pomodoro",      path: "/pomodoro",  Icon: Timer },
       { label: "Manners",       path: "/manners",   Icon: Heart },
+      { label: "Gallery",       path: "/gallery",   Icon: Images },
     ],
   },
   {
