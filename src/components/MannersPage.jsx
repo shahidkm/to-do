@@ -13,7 +13,16 @@ import {
     HelpingHand,
     UserCheck,
     Quote,
-    Star
+    Star,
+    Brain,
+    BookOpen,
+    MessageSquare,
+    Dumbbell,
+    Wallet,
+    Users,
+    Shield,
+    Scale,
+    Timer
 } from "lucide-react";
 import Navbar from "./NavBar";
 
@@ -82,6 +91,56 @@ const MANNERS = [
         title: "Speak Well",
         description: "Avoid abusive language and gossip. Speak clearly, respectfully, and thoughtfully.",
         icon: <Quote className="text-slate-400" />
+    },
+    {
+        title: "Control Your Mind",
+        description: "Don't react instantly—pause and think. Anger, jealousy, ego → control them, don't let them control you. A mature man is known by how he reacts under pressure.",
+        icon: <Brain className="text-violet-400" />
+    },
+    {
+        title: "Take Responsibility",
+        description: "Stop blaming others. Accept mistakes, fix them, and improve. Be reliable: if you say something, do it. Responsibility earns respect from others.",
+        icon: <Shield className="text-green-400" />
+    },
+    {
+        title: "Keep Learning",
+        description: "Learn useful skills—communication, tech, money management. Master one strong skill. Skilled people don't chase success—success comes to them.",
+        icon: <BookOpen className="text-amber-400" />
+    },
+    {
+        title: "Speak Less, Speak Smart",
+        description: "Don't talk too much. Listen more, understand people. Speak clearly, calmly, and only when needed. Silence + clarity = strong presence.",
+        icon: <MessageSquare className="text-sky-400" />
+    },
+    {
+        title: "Build Discipline",
+        description: "Wake up on time. Take care of your body—exercise and hygiene. Be consistent even when you don't feel like it. Discipline beats motivation every time.",
+        icon: <Dumbbell className="text-red-400" />
+    },
+    {
+        title: "Understand Money Early",
+        description: "Save money, don't waste on showing off. Learn basic finance—saving and investing. Avoid unnecessary debt. Handling money wisely defines your character.",
+        icon: <Wallet className="text-lime-400" />
+    },
+    {
+        title: "Choose People Carefully",
+        description: "Stay away from drama, fake friends, and negativity. Keep a small circle of real people. Don't try to impress everyone. Your circle shapes your future.",
+        icon: <Users className="text-fuchsia-400" />
+    },
+    {
+        title: "Respect Yourself First",
+        description: "Don't beg for attention or validation. Set boundaries even with close people. Know your worth, but stay humble. Self-respect = real confidence.",
+        icon: <UserCheck className="text-blue-400" />
+    },
+    {
+        title: "Balance Ego & Humility",
+        description: "Be confident, but not arrogant. Accept when you're wrong. Always stay open to learning. Ego destroys growth, humility builds it.",
+        icon: <Scale className="text-orange-400" />
+    },
+    {
+        title: "Be Patient",
+        description: "Don't expect instant results. Work daily, improve slowly. Trust the process. Strong men are built over years, not days.",
+        icon: <Timer className="text-teal-400" />
     }
 ];
 
@@ -168,7 +227,7 @@ export default function MannersPage() {
                 >
                     <div className="inline-block px-8 py-4 dash-glass rounded-2xl border border-white/5">
                         <p className="text-slate-500 font-mono text-xs uppercase tracking-widest italic">
-                            "Manners maketh man." — William Horman
+                            "Becoming a legend is not about showing others — it's about becoming someone you respect when you're alone."
                         </p>
                     </div>
                 </motion.div>
