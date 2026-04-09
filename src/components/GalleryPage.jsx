@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Images, Upload, X, Loader2, Trash2, ZoomIn, Pencil, Check } from "lucide-react";
+import { Images, Upload, X, Loader2, Trash2, ZoomIn, Pencil, Check, MoreVertical } from "lucide-react";
 import Navbar from "./NavBar";
 import { supabase } from "../supabase";
 
@@ -14,9 +14,16 @@ export default function GalleryPage() {
     const [preview, setPreview] = useState(null);
     const [lightbox, setLightbox] = useState(null);
     const [editing, setEditing] = useState(null); // { id, caption }
+    const [menuOpen, setMenuOpen] = useState(null); // id of card with open menu
     const fileRef = useRef();
 
     useEffect(() => { fetchImages(); }, []);
+
+    useEffect(() => {
+        const close = () => setMenuOpen(null);
+        document.addEventListener("click", close);
+        return () => document.removeEventListener("click", close);
+    }, []);
 
     async function fetchImages() {
         const { data } = await supabase
@@ -181,7 +188,31 @@ export default function GalleryPage() {
                                     className="w-full object-cover cursor-pointer"
                                     onClick={() => setLightbox(img)}
                                 />
-                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100">
+                                {/* Mobile 3-dot menu button */}
+                                <button
+                                    onClick={e => { e.stopPropagation(); setMenuOpen(menuOpen === img.id ? null : img.id); }}
+                                    className="absolute top-2 right-2 z-20 p-1.5 bg-black/60 hover:bg-black/80 rounded-lg backdrop-blur-sm lg:hidden"
+                                >
+                                    <MoreVertical size={15} className="text-white" />
+                                </button>
+
+                                {/* Mobile dropdown menu */}
+                                {menuOpen === img.id && (
+                                    <div onClick={e => e.stopPropagation()} className="absolute top-9 right-2 z-30 bg-slate-900 border border-white/10 rounded-xl overflow-hidden shadow-xl lg:hidden">
+                                        <button onClick={() => { setLightbox(img); setMenuOpen(null); }} className="flex items-center gap-2 w-full px-4 py-2.5 text-xs text-slate-300 hover:bg-white/10 transition-all">
+                                            <ZoomIn size={13} /> View
+                                        </button>
+                                        <button onClick={() => { setEditing({ id: img.id, caption: img.caption || "" }); setMenuOpen(null); }} className="flex items-center gap-2 w-full px-4 py-2.5 text-xs text-cyan-400 hover:bg-cyan-500/10 transition-all">
+                                            <Pencil size={13} /> Edit Caption
+                                        </button>
+                                        <button onClick={() => { handleDelete(img.id); setMenuOpen(null); }} className="flex items-center gap-2 w-full px-4 py-2.5 text-xs text-red-400 hover:bg-red-500/10 transition-all">
+                                            <Trash2 size={13} /> Delete
+                                        </button>
+                                    </div>
+                                )}
+
+                                {/* Desktop hover overlay */}
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all items-center justify-center gap-3 hidden lg:flex opacity-0 group-hover:opacity-100">
                                     <button onClick={() => setLightbox(img)} className="p-2 bg-white/10 hover:bg-white/20 rounded-xl backdrop-blur-sm transition-all">
                                         <ZoomIn size={16} className="text-white" />
                                     </button>
