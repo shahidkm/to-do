@@ -21,6 +21,9 @@ import BooksTracker from "./BooksTracker";
 import LevelSystem from "./LevelSystem";
 import BossChallenge from "./BossChallenge";
 import GalleryPage from "./GalleryPage";
+import MirrorTalk from "./MirrorTalk";
+import FearCrusher from "./FearCrusher";
+import ComfortZone from "./ComfortZone";
 
 function RoutesConfig() {
     return (
@@ -47,6 +50,9 @@ function RoutesConfig() {
                 <Route path="/level" element={<LevelSystem />} />
                 <Route path="/boss" element={<BossChallenge />} />
                 <Route path="/gallery" element={<GalleryPage />} />
+                <Route path="/mirror-talk" element={<MirrorTalk />} />
+                <Route path="/fear-crusher" element={<FearCrusher />} />
+                <Route path="/comfort-zone" element={<ComfortZone />} />
             </Routes>
         </Router>
     );

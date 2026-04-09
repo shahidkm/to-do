@@ -5,7 +5,7 @@ import {
   Map, Sparkles, TrendingUp, ClipboardList, FolderOpen,
   Medal, Zap, Swords, Users, Wallet, Star, ScrollText,
   Brain, Activity, Trophy, ChevronDown, Menu, X,
-  GraduationCap, Gem, Clock, Heart, Images
+  GraduationCap, Gem, Clock, Heart, Images, Mic2, Shield
 } from "lucide-react";
 
 // ─── All nav groups with every route ──────────────────────────────────────
@@ -49,6 +49,16 @@ const NAV_GROUPS = [
       { label: "Report Card",    path: "/report-card",    Icon: ClipboardList },
       { label: "Previous Todos", path: "/previous-todos", Icon: FolderOpen },
       { label: "Achievements",   path: "/achievements",   Icon: Medal },
+    ],
+  },
+  {
+    label: "Mindset",
+    color: "#f97316",
+    Icon: Mic2,
+    items: [
+      { label: "Mirror Talk",   path: "/mirror-talk",   Icon: Mic2 },
+      { label: "Fear Crusher",  path: "/fear-crusher",  Icon: Swords },
+      { label: "Comfort Zone",  path: "/comfort-zone",  Icon: Shield },
     ],
   },
   {
