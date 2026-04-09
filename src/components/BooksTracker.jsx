@@ -15,6 +15,7 @@ const STATUS = [
   { key: 'completed', label: 'Completed', color: '#4ade80' },
   { key: 'paused',    label: 'Paused',    color: '#fb923c' },
   { key: 'wishlist',  label: 'Wishlist',  color: '#818cf8' },
+  { key: 'learning',  label: 'Learning',  color: '#22d3ee' },
 ];
 
 export default function BooksTracker() {
@@ -46,7 +47,8 @@ export default function BooksTracker() {
   };
 
   const updateProgress = async (id, current_page, total_pages) => {
-    const status = current_page >= total_pages ? 'completed' : 'reading';
+    const book = books.find(b => b.id === id);
+    const status = current_page >= total_pages ? 'completed' : (book?.status || 'reading');
     await supabase.from('books_tracker').update({ current_page, status }).eq('id', id);
     await load();
   };
@@ -57,7 +59,11 @@ export default function BooksTracker() {
   };
 
   const filtered = filter === 'all' ? books : books.filter(b => b.status === filter);
-  const stats = { total: books.length, completed: books.filter(b => b.status === 'completed').length, reading: books.filter(b => b.status === 'reading').length };
+  const stats = {
+    total: books.length,
+    completed: books.filter(b => b.status === 'completed').length,
+    reading: books.filter(b => b.status === 'reading' || b.status === 'learning').length,
+  };
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200">
