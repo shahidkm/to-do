@@ -11,6 +11,15 @@ import FriendsPage from "./FriendsPage";
 import MoneyPage from "./MoneyPage";
 import MannersPage from "./MannersPage";
 import LifeSuccessRate from "./LifeSuccessRate";
+import MoodTracker from "./MoodTracker";
+import HabitStreaks from "./HabitStreaks";
+import WeeklyReportCard from "./WeeklyReportCard";
+import PomodoroTimer from "./PomodoroTimer";
+import DailyJournal from "./DailyJournal";
+import SkillsTracker from "./SkillsTracker";
+import BooksTracker from "./BooksTracker";
+import LevelSystem from "./LevelSystem";
+import BossChallenge from "./BossChallenge";
 
 function RoutesConfig() {
     return (
@@ -27,6 +36,15 @@ function RoutesConfig() {
                 <Route path="/money" element={<MoneyPage />} />
                 <Route path="/manners" element={<MannersPage />} />
                 <Route path="/life-success" element={<LifeSuccessRate />} />
+                <Route path="/mood" element={<MoodTracker />} />
+                <Route path="/habits" element={<HabitStreaks />} />
+                <Route path="/report-card" element={<WeeklyReportCard />} />
+                <Route path="/pomodoro" element={<PomodoroTimer />} />
+                <Route path="/journal" element={<DailyJournal />} />
+                <Route path="/skills" element={<SkillsTracker />} />
+                <Route path="/books" element={<BooksTracker />} />
+                <Route path="/level" element={<LevelSystem />} />
+                <Route path="/boss" element={<BossChallenge />} />
             </Routes>
         </Router>
     );

@@ -1,302 +1,343 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import {
+  Home, BarChart2, Gift, Smile, Flame, BookOpen, Timer,
+  Map, Sparkles, TrendingUp, ClipboardList, FolderOpen,
+  Medal, Zap, Swords, Users, Wallet, Star, ScrollText,
+  Brain, Activity, Trophy, ChevronDown, Menu, X,
+  GraduationCap, Gem, Clock, Heart
+} from "lucide-react";
 
-const NAV_LINKS = [
-  { label: "Home", path: "/" },
-  { label: "Performance", path: "/performance-dashboard" },
-  { label: "Rewards", path: "/reward-dashboard" },
-  { label: "Plans", path: "/plans" },
-  { label: "Inspirations", path: "/inspirations" },
-  { label: "Previous", path: "/previous-todos" },
-  { label: "Achievements", path: "/achievements" },
-  { label: "Friends", path: "/freinds" },
-  { label: "Money Vault", path: "/money" },
-  { label: "Manners", path: "/manners" },
-  { label: "Life Success", path: "/life-success" },
+// ─── All nav groups with every route ──────────────────────────────────────
+const NAV_DIRECT = [
+  { label: "Home",        path: "/",                      Icon: Home },
+  { label: "Performance", path: "/performance-dashboard", Icon: Activity },
+  { label: "Rewards",     path: "/reward-dashboard",      Icon: Gift },
 ];
 
-const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap');
+const NAV_GROUPS = [
+  {
+    label: "Lifestyle",
+    color: "#22d3ee",
+    Icon: Smile,
+    items: [
+      { label: "Mood Tracker",  path: "/mood",      Icon: Smile },
+      { label: "Habit Streaks", path: "/habits",    Icon: Flame },
+      { label: "Daily Journal", path: "/journal",   Icon: ScrollText },
+      { label: "Pomodoro",      path: "/pomodoro",  Icon: Timer },
+      { label: "Manners",       path: "/manners",   Icon: Heart },
+    ],
+  },
+  {
+    label: "Growth",
+    color: "#a78bfa",
+    Icon: Brain,
+    items: [
+      { label: "Skills Tracker",  path: "/skills",       Icon: Brain },
+      { label: "Books & Courses", path: "/books",        Icon: BookOpen },
+      { label: "Plans",           path: "/plans",        Icon: Map },
+      { label: "Inspirations",    path: "/inspirations", Icon: Sparkles },
+    ],
+  },
+  {
+    label: "Analytics",
+    color: "#4ade80",
+    Icon: TrendingUp,
+    items: [
+      { label: "Life Success",   path: "/life-success",   Icon: TrendingUp },
+      { label: "Report Card",    path: "/report-card",    Icon: ClipboardList },
+      { label: "Previous Todos", path: "/previous-todos", Icon: FolderOpen },
+      { label: "Achievements",   path: "/achievements",   Icon: Medal },
+    ],
+  },
+  {
+    label: "Social & Fun",
+    color: "#f59e0b",
+    Icon: Trophy,
+    items: [
+      { label: "Level System", path: "/level",   Icon: Zap },
+      { label: "Boss Fight",   path: "/boss",    Icon: Swords },
+      { label: "Friends",      path: "/freinds", Icon: Users },
+      { label: "Money Vault",  path: "/money",   Icon: Wallet },
+    ],
+  },
+];
 
-.nb-wrap {
-  font-family: 'Rajdhani', sans-serif;
-  position: relative;
-  z-index: 100;
-}
+// ─── Dropdown ──────────────────────────────────────────────────────────────
+function Dropdown({ group, isActive, onNavigate }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
 
-/* Glassmorphism bar */
-.nb-bar {
-  background: rgba(6, 9, 19, 0.85);
-  border-bottom: 1px solid rgba(0, 229, 255, 0.15);
-  backdrop-filter: blur(24px) saturate(1.6);
-  -webkit-backdrop-filter: blur(24px) saturate(1.6);
-  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(0,229,255,0.08) inset;
-}
+  useEffect(() => {
+    const close = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, []);
 
-/* Logo */
-.nb-logo {
-  font-family: 'Orbitron', monospace;
-  font-weight: 900;
-  font-size: 18px;
-  letter-spacing: 0.12em;
-  background: linear-gradient(90deg, #00e5ff 0%, #fff 45%, #7c4dff 100%);
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: nbShimmer 3.5s linear infinite;
-  cursor: pointer;
-  transition: transform 0.2s;
-  text-decoration: none;
-}
-.nb-logo:hover { transform: scale(1.04); }
+  const groupActive = group.items.some(i => isActive(i.path));
+  const { Icon: GroupIcon, color } = group;
 
-@keyframes nbShimmer {
-  0%   { background-position: -200% center; }
-  100% { background-position:  200% center; }
-}
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      {/* Trigger */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          display: "flex", alignItems: "center", gap: 6,
+          fontFamily: "'Rajdhani', sans-serif", fontSize: 13, fontWeight: 600, letterSpacing: "0.06em",
+          color: open || groupActive ? color : "rgba(148,163,184,0.9)",
+          background: open || groupActive ? color + "12" : "transparent",
+          border: `1px solid ${open || groupActive ? color + "30" : "transparent"}`,
+          borderRadius: 10, padding: "6px 12px", cursor: "pointer",
+          transition: "all 0.2s", whiteSpace: "nowrap",
+        }}
+        onMouseEnter={e => { if (!open && !groupActive) { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "#e2e8f0"; }}}
+        onMouseLeave={e => { if (!open && !groupActive) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(148,163,184,0.9)"; }}}
+      >
+        <GroupIcon size={14} />
+        {group.label}
+        <ChevronDown size={12} style={{ opacity: 0.6, transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.25s" }} />
+      </button>
 
-/* Desktop nav link */
-.nb-link {
-  font-family: 'Rajdhani', sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  color: rgba(180, 210, 255, 0.7);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 7px 14px;
-  border-radius: 10px;
-  position: relative;
-  transition: color 0.2s, background 0.2s, transform 0.15s;
-  white-space: nowrap;
-}
-.nb-link::after {
-  content: '';
-  position: absolute;
-  bottom: 4px; left: 50%;
-  transform: translateX(-50%) scaleX(0);
-  width: 60%; height: 2px;
-  background: linear-gradient(90deg, #00e5ff, #7c4dff);
-  border-radius: 2px;
-  transition: transform 0.2s cubic-bezier(.22,1,.36,1);
-}
-.nb-link:hover {
-  color: #00e5ff;
-  background: rgba(0, 229, 255, 0.07);
-  transform: translateY(-1px);
-}
-.nb-link:hover::after { transform: translateX(-50%) scaleX(1); }
+      {/* Panel — rendered in place, no portal needed */}
+      {open && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 8px)", left: "50%", transform: "translateX(-50%)",
+          minWidth: 220, zIndex: 9999,
+          background: "rgba(4,7,18,0.98)", border: "1px solid rgba(255,255,255,0.1)",
+          borderRadius: 16, padding: 6,
+          boxShadow: `0 24px 60px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.04), 0 0 30px ${color}15`,
+          backdropFilter: "blur(32px)", WebkitBackdropFilter: "blur(32px)",
+          animation: "ddFadeIn 0.18s cubic-bezier(.22,1,.36,1) both",
+        }}>
+          {/* top accent */}
+          <div style={{ position: "absolute", top: 0, left: 18, right: 18, height: 1, background: `linear-gradient(90deg,transparent,${color}80,transparent)`, borderRadius: 1 }} />
 
-/* Active link */
-.nb-link.nb-active {
-  color: #00e5ff;
-  background: rgba(0, 229, 255, 0.1);
-  border: 1px solid rgba(0, 229, 255, 0.22);
-  box-shadow: 0 0 14px rgba(0, 229, 255, 0.15);
-}
-.nb-link.nb-active::after { transform: translateX(-50%) scaleX(1); }
+          {/* header */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px 6px" }}>
+            <div style={{ width: 26, height: 26, borderRadius: 8, background: color + "20", border: `1px solid ${color}30`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <GroupIcon size={13} style={{ color }} />
+            </div>
+            <span style={{ fontFamily: "Orbitron,monospace", fontSize: 8.5, letterSpacing: "0.2em", textTransform: "uppercase", color, opacity: 0.85 }}>{group.label}</span>
+          </div>
 
-/* Hamburger button */
-.nb-burger {
-  background: rgba(0, 229, 255, 0.07);
-  border: 1px solid rgba(0, 229, 255, 0.2);
-  border-radius: 10px;
-  padding: 8px;
-  cursor: pointer;
-  color: #00e5ff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-.nb-burger:hover {
-  background: rgba(0, 229, 255, 0.14);
-  box-shadow: 0 0 14px rgba(0, 229, 255, 0.25);
-  transform: scale(1.06);
-}
-
-/* Mobile dropdown */
-.nb-mobile {
-  background: rgba(6, 9, 19, 0.98);
-  border-top: 1px solid rgba(0, 229, 255, 0.1);
-  border-bottom: 1px solid rgba(0, 229, 255, 0.1);
-  backdrop-filter: blur(20px);
-  padding: 10px 16px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  animation: nbDropDown 0.28s cubic-bezier(.22,1,.36,1) both;
-}
-@keyframes nbDropDown {
-  from { opacity: 0; transform: translateY(-10px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-/* Mobile link */
-.nb-mob-link {
-  font-family: 'Rajdhani', sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.07em;
-  color: rgba(180, 210, 255, 0.7);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 10px 16px;
-  border-radius: 12px;
-  text-align: left;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  transition: all 0.2s;
-  position: relative;
-  overflow: hidden;
-}
-.nb-mob-link::before {
-  content: '';
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 3px;
-  background: linear-gradient(180deg, #00e5ff, #7c4dff);
-  border-radius: 0 2px 2px 0;
-  transform: scaleY(0);
-  transition: transform 0.2s cubic-bezier(.22,1,.36,1);
-}
-.nb-mob-link:hover {
-  color: #00e5ff;
-  background: rgba(0, 229, 255, 0.07);
-  transform: translateX(4px);
-}
-.nb-mob-link:hover::before { transform: scaleY(1); }
-.nb-mob-link.nb-active {
-  color: #00e5ff;
-  background: rgba(0, 229, 255, 0.09);
-  border: 1px solid rgba(0, 229, 255, 0.18);
-}
-.nb-mob-link.nb-active::before { transform: scaleY(1); }
-
-/* Dot indicator (active) */
-.nb-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: #00e5ff;
-  box-shadow: 0 0 8px #00e5ff;
-  flex-shrink: 0;
-  margin-left: auto;
+          {/* items */}
+          {group.items.map(({ label, path, Icon: ItemIcon }) => {
+            const active = isActive(path);
+            return (
+              <button key={path}
+                onClick={() => { onNavigate(path); setOpen(false); }}
+                style={{
+                  display: "flex", alignItems: "center", gap: 10, width: "100%",
+                  padding: "8px 10px", borderRadius: 10,
+                  border: `1px solid ${active ? color + "25" : "transparent"}`,
+                  background: active ? color + "12" : "transparent",
+                  cursor: "pointer", textAlign: "left", whiteSpace: "nowrap",
+                  fontFamily: "'Rajdhani',sans-serif", fontSize: 13, fontWeight: 600, letterSpacing: "0.04em",
+                  color: active ? "#f1f5f9" : "rgba(148,163,184,0.8)",
+                  transition: "all 0.15s",
+                }}
+                onMouseEnter={e => { if (!active) { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "#f1f5f9"; e.currentTarget.style.transform = "translateX(2px)"; }}}
+                onMouseLeave={e => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(148,163,184,0.8)"; e.currentTarget.style.transform = "translateX(0)"; }}}
+              >
+                <div style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: active ? color + "20" : "rgba(255,255,255,0.05)", border: `1px solid ${active ? color + "30" : "rgba(255,255,255,0.06)"}` }}>
+                  <ItemIcon size={13} style={{ color: active ? color : "#64748b" }} />
+                </div>
+                <span style={{ flex: 1 }}>{label}</span>
+                {active && <div style={{ width: 5, height: 5, borderRadius: "50%", background: color, boxShadow: `0 0 6px ${color}`, flexShrink: 0 }} />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 }
 
-/* Scan line on the bar */
-@keyframes nbScan {
-  0%   { left: -20%; }
-  100% { left: 110%; }
-}
-.nb-scan::after {
-  content: '';
-  position: absolute;
-  top: 0; bottom: 0;
-  width: 18%;
-  background: linear-gradient(90deg, transparent, rgba(0,229,255,0.06), transparent);
-  animation: nbScan 5s linear infinite;
-  pointer-events: none;
-}
-`;
-
+// ─── Main Navbar ───────────────────────────────────────────────────────────
 export default function Navbar() {
-  const [isOpen, setIsOpen] = useState(false);
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  const handleNavigate = (path) => {
-    navigate(path);
-    setIsOpen(false);
-  };
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const navigate  = useNavigate();
+  const location  = useLocation();
 
   const isActive = (path) =>
     path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
 
+  const go = (path) => { navigate(path); setMobileOpen(false); };
+
   return (
     <>
-      <style>{CSS}</style>
-      <div className="nb-wrap">
-        <div className="nb-bar nb-scan" style={{ position: "relative" }}>
-          <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64 }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap');
+        @keyframes ddFadeIn {
+          from { opacity:0; transform:translateX(-50%) translateY(-8px) scale(0.97); }
+          to   { opacity:1; transform:translateX(-50%) translateY(0) scale(1); }
+        }
+        @keyframes logoShimmer {
+          0%   { background-position: -200% center; }
+          100% { background-position:  200% center; }
+        }
+        @keyframes scanLine { to { left: 110%; } }
+        .nb-logo {
+          font-family: 'Orbitron', monospace; font-weight: 900; font-size: 16px;
+          letter-spacing: 0.14em;
+          background: linear-gradient(90deg, #00e5ff, #fff 40%, #a78bfa);
+          background-size: 200% auto;
+          -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+          animation: logoShimmer 4s linear infinite;
+          cursor: pointer; transition: transform 0.2s; white-space: nowrap; flex-shrink: 0;
+        }
+        .nb-logo:hover { transform: scale(1.05); }
+        .nb-scan::after {
+          content:''; position:absolute; top:0; bottom:0; left:-20%; width:14%;
+          background: linear-gradient(90deg,transparent,rgba(0,229,255,0.04),transparent);
+          animation: scanLine 7s linear infinite; pointer-events:none;
+        }
+        .nb-mob-panel {
+          background: rgba(4,7,18,0.99); border-bottom: 1px solid rgba(255,255,255,0.06);
+          backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px);
+          max-height: 88vh; overflow-y: auto;
+          scrollbar-width: thin; scrollbar-color: #1e293b transparent;
+          animation: mobSlide 0.25s cubic-bezier(.22,1,.36,1) both;
+        }
+        @keyframes mobSlide { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+        @media (max-width: 1024px) { .nb-desktop{display:none!important} .nb-mob-btn{display:flex!important} }
+        @media (min-width: 1025px) { .nb-mob-btn{display:none!important} }
+      `}</style>
 
-            {/* ── LOGO ─────────────────────────────────────────────────── */}
-            <span className="nb-logo" onClick={() => handleNavigate("/")}>
-              ◈ SHAHID KM
-            </span>
+      <div style={{ fontFamily: "'Rajdhani',sans-serif", position: "relative", zIndex: 1000 }}>
+        {/* Bar */}
+        <div className="nb-scan" style={{
+          background: "rgba(4,7,18,0.92)", borderBottom: "1px solid rgba(255,255,255,0.07)",
+          backdropFilter: "blur(28px) saturate(1.8)", WebkitBackdropFilter: "blur(28px) saturate(1.8)",
+          boxShadow: "0 1px 0 rgba(255,255,255,0.04), 0 8px 40px rgba(0,0,0,0.5)",
+          position: "relative", overflow: "visible",
+        }}>
+          <div style={{ maxWidth: 1440, margin: "0 auto", padding: "0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 62, gap: 12 }}>
 
-            {/* ── DESKTOP LINKS ─────────────────────────────────────────── */}
-            <div style={{ display: "flex", alignItems: "center", gap: 4 }} className="nb-desktop-links">
-              {NAV_LINKS.map(({ label, path }) => (
-                <button
-                  key={path}
-                  className={`nb-link ${isActive(path) ? "nb-active" : ""}`}
-                  onClick={() => handleNavigate(path)}
-                >
-                  {label}
-                </button>
+            {/* Logo */}
+            <span className="nb-logo" onClick={() => go("/")}>◈ SHAHID KM</span>
+
+            {/* Desktop nav */}
+            <div className="nb-desktop" style={{ display: "flex", alignItems: "center", gap: 2 }}>
+              {/* Direct links */}
+              {NAV_DIRECT.map(({ label, path, Icon }) => {
+                const active = isActive(path);
+                return (
+                  <button key={path} onClick={() => go(path)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 6,
+                      fontFamily: "'Rajdhani',sans-serif", fontSize: 13, fontWeight: 600, letterSpacing: "0.06em",
+                      color: active ? "#00e5ff" : "rgba(148,163,184,0.9)",
+                      background: active ? "rgba(0,229,255,0.1)" : "transparent",
+                      border: `1px solid ${active ? "rgba(0,229,255,0.25)" : "transparent"}`,
+                      borderRadius: 10, padding: "6px 12px", cursor: "pointer",
+                      transition: "all 0.2s", whiteSpace: "nowrap",
+                      boxShadow: active ? "0 0 14px rgba(0,229,255,0.12)" : "none",
+                    }}
+                    onMouseEnter={e => { if (!active) { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "#e2e8f0"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}}
+                    onMouseLeave={e => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(148,163,184,0.9)"; e.currentTarget.style.borderColor = "transparent"; }}}
+                  >
+                    <Icon size={14} style={{ opacity: 0.85 }} />
+                    {label}
+                  </button>
+                );
+              })}
+
+              {/* Divider */}
+              <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.08)", margin: "0 6px" }} />
+
+              {/* Dropdown groups */}
+              {NAV_GROUPS.map(group => (
+                <Dropdown key={group.label} group={group} isActive={isActive} onNavigate={go} />
               ))}
             </div>
 
-            {/* ── HAMBURGER ────────────────────────────────────────────── */}
-            <button
-              className="nb-burger nb-mobile-only"
-              onClick={() => setIsOpen(!isOpen)}
-              aria-label="Toggle menu"
-            >
-              {isOpen ? (
-                /* X icon */
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              ) : (
-                /* Hamburger icon */
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              )}
+            {/* Hamburger */}
+            <button className="nb-mob-btn"
+              onClick={() => setMobileOpen(o => !o)}
+              style={{
+                background: mobileOpen ? "rgba(0,229,255,0.1)" : "rgba(255,255,255,0.05)",
+                border: `1px solid ${mobileOpen ? "rgba(0,229,255,0.3)" : "rgba(255,255,255,0.1)"}`,
+                borderRadius: 10, padding: 8, cursor: "pointer",
+                color: mobileOpen ? "#00e5ff" : "#94a3b8",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                transition: "all 0.2s", flexShrink: 0,
+              }}>
+              {mobileOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
           </div>
         </div>
 
-        {/* ── MOBILE DROPDOWN ───────────────────────────────────────────── */}
-        {isOpen && (
-          <div className="nb-mobile">
-            {NAV_LINKS.map(({ label, path }) => (
-              <button
-                key={path}
-                className={`nb-mob-link ${isActive(path) ? "nb-active" : ""}`}
-                onClick={() => handleNavigate(path)}
-              >
-                <span style={{
-                  fontFamily: "Orbitron, monospace",
-                  fontSize: 9,
-                  color: isActive(path) ? "#00e5ff" : "rgba(0,229,255,0.3)",
-                  letterSpacing: "0.1em",
-                  minWidth: 18,
-                }}>
-                  {String(NAV_LINKS.findIndex(l => l.path === path) + 1).padStart(2, "0")}
-                </span>
-                {label}
-                {isActive(path) && <span className="nb-dot" />}
-              </button>
-            ))}
+        {/* Mobile panel */}
+        {mobileOpen && (
+          <div className="nb-mob-panel">
+            <div style={{ padding: "10px 0 16px" }}>
+
+              {/* Direct links row */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 4, padding: "4px 12px 8px" }}>
+                {NAV_DIRECT.map(({ label, path, Icon }) => {
+                  const active = isActive(path);
+                  return (
+                    <button key={path} onClick={() => go(path)}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 8, padding: "10px 12px",
+                        borderRadius: 12, border: `1px solid ${active ? "rgba(0,229,255,0.25)" : "rgba(255,255,255,0.06)"}`,
+                        background: active ? "rgba(0,229,255,0.1)" : "rgba(255,255,255,0.03)",
+                        cursor: "pointer", fontFamily: "'Rajdhani',sans-serif", fontSize: 13, fontWeight: 600,
+                        color: active ? "#00e5ff" : "rgba(148,163,184,0.8)", transition: "all 0.18s",
+                      }}>
+                      <Icon size={15} style={{ color: active ? "#00e5ff" : "#475569", flexShrink: 0 }} />
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Groups */}
+              {NAV_GROUPS.map((group) => {
+                const { Icon: GroupIcon, color } = group;
+                return (
+                  <div key={group.label}>
+                    {/* Divider */}
+                    <div style={{ height: 1, background: "rgba(255,255,255,0.05)", margin: "8px 16px" }} />
+
+                    {/* Section label */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px 6px" }}>
+                      <div style={{ width: 22, height: 22, borderRadius: 7, background: color + "20", border: `1px solid ${color}30`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <GroupIcon size={12} style={{ color }} />
+                      </div>
+                      <span style={{ fontFamily: "Orbitron,monospace", fontSize: 8.5, letterSpacing: "0.2em", textTransform: "uppercase", color, opacity: 0.85, fontWeight: 700 }}>{group.label}</span>
+                    </div>
+
+                    {/* 2-col grid */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4, padding: "0 12px" }}>
+                      {group.items.map(({ label, path, Icon: ItemIcon }) => {
+                        const active = isActive(path);
+                        return (
+                          <button key={path} onClick={() => go(path)}
+                            style={{
+                              display: "flex", alignItems: "center", gap: 9, padding: "10px 12px",
+                              borderRadius: 12, border: `1px solid ${active ? color + "30" : "rgba(255,255,255,0.05)"}`,
+                              background: active ? color + "10" : "rgba(255,255,255,0.02)",
+                              cursor: "pointer", fontFamily: "'Rajdhani',sans-serif", fontSize: 12.5, fontWeight: 600,
+                              color: active ? "#f1f5f9" : "rgba(148,163,184,0.75)", transition: "all 0.18s",
+                            }}>
+                            <div style={{ width: 26, height: 26, borderRadius: 8, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: active ? color + "20" : "rgba(255,255,255,0.05)", border: `1px solid ${active ? color + "30" : "rgba(255,255,255,0.06)"}` }}>
+                              <ItemIcon size={13} style={{ color: active ? color : "#475569" }} />
+                            </div>
+                            <span style={{ flex: 1, lineHeight: 1.2 }}>{label}</span>
+                            {active && <div style={{ width: 5, height: 5, borderRadius: "50%", background: color, boxShadow: `0 0 5px ${color}`, flexShrink: 0 }} />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
-
-        {/* Responsive hide/show via inline media query */}
-        <style>{`
-          .nb-desktop-links { display: flex; }
-          .nb-mobile-only   { display: none; }
-          @media (max-width: 860px) {
-            .nb-desktop-links { display: none !important; }
-            .nb-mobile-only   { display: flex !important; }
-          }
-        `}</style>
       </div>
     </>
   );
