@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import Navbar from "./NavBar";
 
+import CloudinaryUpload from "./CloudinaryUpload";
+
 const supabaseUrl = "https://quufeiwzsgiuwkeyjjns.supabase.co";
 const supabaseAnonKey =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1dWZlaXd6c2dpdXdrZXlqam5zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4ODQ5OTYsImV4cCI6MjA4MzQ2MDk5Nn0.KL0XNEg4o4RVMJOfAQdWQekug_sw2I0KNTLkj_73_sg";
@@ -290,16 +292,13 @@ export default function PlansPage() {
                 </div>
               </div>
 
-              {/* Image URL */}
+              {/* Cover Image Upload */}
               <div className="relative md:col-span-2">
-                <label className="text-[10px] font-mono tracking-widest uppercase text-gray-400 mb-2 block">Cover Visual URI (Optional)</label>
-                <input
-                  id="image_url"
-                  type="url"
-                  placeholder="https://..."
-                  className="dash-input w-full px-4 py-3 rounded-xl placeholder-gray-600 focus:ring-1 focus:ring-cyan-500/50"
-                  value={form.image_url}
-                  onChange={(e) => setForm({ ...form, image_url: e.target.value })}
+                <label className="text-[10px] font-mono tracking-widest uppercase text-gray-400 mb-2 block">Cover Image (Optional)</label>
+                <CloudinaryUpload
+                  currentUrl={form.image_url}
+                  label="Upload Cover Image"
+                  onUpload={(url) => setForm({ ...form, image_url: url })}
                 />
               </div>
 

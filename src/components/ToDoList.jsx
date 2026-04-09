@@ -3,6 +3,7 @@ import { Check, Trash2, Edit2, Plus, X, RefreshCw, Camera, Clock, Sparkles, Tren
 import { createClient } from '@supabase/supabase-js';
 import Navbar from './NavBar';
 import TodaysQuotes from './TodaysQuotes';
+import CloudinaryUpload from './CloudinaryUpload';
 
 const supabaseUrl = 'https://quufeiwzsgiuwkeyjjns.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1dWZlaXd6c2dpdXdrZXlqam5zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4ODQ5OTYsImV4cCI6MjA4MzQ2MDk5Nn0.KL0XNEg4o4RVMJOfAQdWQekug_sw2I0KNTLkj_73_sg';
@@ -354,42 +355,17 @@ export default function TodoList() {
                 </div>
               </div>
             )}
-
             <div className="w-full flex flex-col gap-3 mt-2">
-              <label className="cursor-pointer group relative overflow-hidden rounded-xl">
-                <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-                <div className="w-full px-4 py-3 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 rounded-xl transition-all text-center flex items-center justify-center gap-2">
-                  <Camera size={18} />
-                  <span className="text-sm font-medium tracking-wide">Upload Avatar</span>
-                </div>
-                <div className="absolute bottom-0 left-0 h-[2px] w-full bg-gradient-to-r from-transparent via-indigo-500 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-              </label>
-
-              {!showUrlInput ? (
-                <button
-                  onClick={() => setShowUrlInput(true)}
-                  className="px-4 py-3 bg-gray-800/50 hover:bg-gray-800 border border-white/5 text-gray-400 rounded-xl transition-all text-sm font-medium tracking-wide"
-                >
-                  Use Image URL
-                </button>
-              ) : (
-                <div className="flex gap-2 animate-slideIn">
-                  <input
-                    type="text"
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleUrlSubmit()}
-                    placeholder="Paste URL..."
-                    className="flex-1 px-4 py-3 bg-gray-900 border border-indigo-500/30 rounded-xl text-sm text-gray-200 focus:outline-none focus:border-indigo-500 placeholder-gray-600"
-                  />
-                  <button onClick={handleUrlSubmit} className="px-4 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-all">
-                    <Check size={18} />
-                  </button>
-                  <button onClick={() => { setShowUrlInput(false); setImageUrl(''); }} className="px-4 py-3 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-xl transition-all">
-                    <X size={18} />
-                  </button>
-                </div>
-              )}
+              <CloudinaryUpload
+                currentUrl={profileImage}
+                label="Upload Avatar"
+                showPreview={false}
+                onUpload={(url) => {
+                  setProfileImage(url || null);
+                  if (url) localStorage.setItem('profileImage', url);
+                  else localStorage.removeItem('profileImage');
+                }}
+              />
             </div>
           </div>
         </div>
