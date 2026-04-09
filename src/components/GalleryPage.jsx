@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Images, Upload, X, Loader2, Trash2, ZoomIn, Pencil, Check, MoreVertical } from "lucide-react";
+import { Images, Upload, X, Loader2, Trash2, ZoomIn, Pencil, Check, MoreVertical, Download } from "lucide-react";
 import Navbar from "./NavBar";
 import { supabase } from "../supabase";
 
@@ -80,6 +80,16 @@ export default function GalleryPage() {
         await supabase.from("gallery").update({ caption: editing.caption.trim() || null }).eq("id", editing.id);
         setImages(prev => prev.map(img => img.id === editing.id ? { ...img, caption: editing.caption.trim() || null } : img));
         setEditing(null);
+    }
+
+    async function handleDownload(url, caption) {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = caption || "image";
+        a.click();
+        URL.revokeObjectURL(a.href);
     }
 
     return (
@@ -205,6 +215,9 @@ export default function GalleryPage() {
                                         <button onClick={() => { setEditing({ id: img.id, caption: img.caption || "" }); setMenuOpen(null); }} className="flex items-center gap-2 w-full px-4 py-2.5 text-xs text-cyan-400 hover:bg-cyan-500/10 transition-all">
                                             <Pencil size={13} /> Edit Caption
                                         </button>
+                                        <button onClick={() => { handleDownload(img.url, img.caption); setMenuOpen(null); }} className="flex items-center gap-2 w-full px-4 py-2.5 text-xs text-emerald-400 hover:bg-emerald-500/10 transition-all">
+                                            <Download size={13} /> Download
+                                        </button>
                                         <button onClick={() => { handleDelete(img.id); setMenuOpen(null); }} className="flex items-center gap-2 w-full px-4 py-2.5 text-xs text-red-400 hover:bg-red-500/10 transition-all">
                                             <Trash2 size={13} /> Delete
                                         </button>
@@ -218,6 +231,9 @@ export default function GalleryPage() {
                                     </button>
                                     <button onClick={() => setEditing({ id: img.id, caption: img.caption || "" })} className="p-2 bg-cyan-500/20 hover:bg-cyan-500/40 rounded-xl backdrop-blur-sm transition-all">
                                         <Pencil size={16} className="text-cyan-400" />
+                                    </button>
+                                    <button onClick={() => handleDownload(img.url, img.caption)} className="p-2 bg-emerald-500/20 hover:bg-emerald-500/40 rounded-xl backdrop-blur-sm transition-all">
+                                        <Download size={16} className="text-emerald-400" />
                                     </button>
                                     <button onClick={() => handleDelete(img.id)} className="p-2 bg-red-500/20 hover:bg-red-500/40 rounded-xl backdrop-blur-sm transition-all">
                                         <Trash2 size={16} className="text-red-400" />
@@ -273,6 +289,9 @@ export default function GalleryPage() {
                             )}
                             <button onClick={() => setLightbox(null)} className="absolute -top-3 -right-3 p-2 bg-slate-800 hover:bg-slate-700 rounded-full border border-white/10 transition-all">
                                 <X size={16} className="text-white" />
+                            </button>
+                            <button onClick={() => handleDownload(lightbox.url, lightbox.caption)} className="absolute -top-3 -left-3 p-2 bg-emerald-900/80 hover:bg-emerald-800 rounded-full border border-emerald-500/20 transition-all">
+                                <Download size={16} className="text-emerald-400" />
                             </button>
                         </motion.div>
                     </motion.div>
