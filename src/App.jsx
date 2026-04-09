@@ -3,9 +3,17 @@ import RoutesConfig from './components/Routes';
 import PinLock from './components/PinLock';
 
 function App() {
-  const [unlocked, setUnlocked] = useState(false);
+  const [unlocked, setUnlocked] = useState(() => {
+    const t = localStorage.getItem("pin_unlocked_at");
+    return t && Date.now() - Number(t) < 15 * 60 * 1000;
+  });
 
-  if (!unlocked) return <PinLock onUnlock={() => setUnlocked(true)} />;
+  function handleUnlock() {
+    localStorage.setItem("pin_unlocked_at", Date.now());
+    setUnlocked(true);
+  }
+
+  if (!unlocked) return <PinLock onUnlock={handleUnlock} />;
 
   return (
     <div className="App">
