@@ -74,25 +74,19 @@ export default function NotificationSetup() {
 
     setDebugInfo(lines.join(' | '));
 
-    // Try firing notification right now
+    // Always use SW path (works on both HTTP and HTTPS)
     if (Notification.permission === 'granted') {
       try {
-        new Notification('🔔 Debug Test', { body: 'If you see this, notifications work!' });
-        setDebugInfo(prev => prev + ' | ✅ Notification sent!');
+        const reg = await navigator.serviceWorker.ready;
+        await reg.showNotification('🔔 Debug Test', { body: 'If you see this, notifications work!' });
+        setDebugInfo(lines.join(' | ') + ' | ✅ SW Notification sent!');
       } catch (e) {
-        // try SW
-        try {
-          const reg = await navigator.serviceWorker.ready;
-          await reg.showNotification('🔔 Debug Test', { body: 'SW notification test' });
-          setDebugInfo(prev => prev + ' | ✅ SW notification sent!');
-        } catch (e2) {
-          setDebugInfo(prev => prev + ' | ❌ ' + e2.message);
-        }
+        setDebugInfo(lines.join(' | ') + ' | ❌ SW Error: ' + e.message);
+        console.error('SW notification error:', e);
       }
     } else {
-      // Request permission now
       const p = await Notification.requestPermission();
-      setDebugInfo(prev => prev + ' | Permission result: ' + p);
+      setDebugInfo(lines.join(' | ') + ' | Permission result: ' + p);
     }
   }
 
