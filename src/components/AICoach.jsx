@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bot, Sparkles, Loader2, RefreshCw, ChevronDown, ChevronUp, Zap, Brain, Target, CheckCircle, AlertTriangle, Flame } from "lucide-react";
+import { Bot, Sparkles, Loader2, RefreshCw, ChevronDown, ChevronUp, Zap, Brain, Target, CheckCircle, AlertTriangle, Flame, MessageCircle, Send, BarChart2, Copy, Check, History, X } from "lucide-react";
 import Navbar from "./NavBar";
 import { supabase } from "../supabase";
 
@@ -12,6 +12,7 @@ async function fetchAllData() {
         { data: todos }, { data: mood }, { data: habits }, { data: habitLogs },
         { data: journal }, { data: skills }, { data: skillRatings }, { data: books },
         { data: affirmations }, { data: fears }, { data: comfortZone }, { data: money },
+        { data: rewards }, { data: achievements }, { data: plans }, { data: friends },
     ] = await Promise.all([
         supabase.from("ToDo").select("title,completed").eq("active", true).gte("created_at", `${TODAY}T00:00:00`).lte("created_at", `${TODAY}T23:59:59`),
         supabase.from("mood_tracker").select("mood,note,date").order("date", { ascending: false }).limit(7),
@@ -25,12 +26,16 @@ async function fetchAllData() {
         supabase.from("fear_crusher").select("fear,challenge,conquered"),
         supabase.from("comfort_zone").select("action,difficulty,reflection,done_at").order("created_at", { ascending: false }).limit(5),
         supabase.from("money_transactions").select("title,amount,type,category,date").order("date", { ascending: false }).limit(10),
+        supabase.from("rewards").select("reward_title,reward_type,week_count,unlocked").order("week_count"),
+        supabase.from("achievements").select("title,target_value,start_date,target_date").order("created_at", { ascending: false }).limit(5),
+        supabase.from("plans").select("title,category,priority,status,start_date,end_date").order("created_at", { ascending: false }).limit(5),
+        supabase.from("friends").select("name,priority_level").order("priority_level"),
     ]);
-    return { todos, mood, habits, habitLogs, journal, skills, skillRatings, books, affirmations, fears, comfortZone, money };
+    return { todos, mood, habits, habitLogs, journal, skills, skillRatings, books, affirmations, fears, comfortZone, money, rewards, achievements, plans, friends };
 }
 
 function buildPrompt(data) {
-    const { todos, mood, habits, habitLogs, journal, skills, skillRatings, books, affirmations, fears, comfortZone, money } = data;
+    const { todos, mood, habits, habitLogs, journal, skills, skillRatings, books, affirmations, fears, comfortZone, money, rewards, achievements, plans, friends } = data;
     const completedTodos = (todos || []).filter(t => t.completed);
     const pendingTodos = (todos || []).filter(t => !t.completed);
     const conqueredFears = (fears || []).filter(f => f.conquered).length;
@@ -47,10 +52,13 @@ function buildPrompt(data) {
         return `${s.name}: ${latest}/10`;
     });
     const recentJournal = (journal || [])[0];
-    const readingBooks = (books || []).filter(b => b.status === "reading");
+    const readingBooks = (books || []).filter(b => b.status === "reading" || b.status === "learning");
     const recentComfort = (comfortZone || []).slice(0, 3);
     const totalIncome = (money || []).filter(t => t.type === "income").reduce((s, t) => s + Number(t.amount), 0);
     const totalExpense = (money || []).filter(t => t.type === "expense").reduce((s, t) => s + Number(t.amount), 0);
+    const unlockedRewards = (rewards || []).filter(r => r.unlocked).length;
+    const activePlans = (plans || []).filter(p => p.status !== "completed" && p.status !== "cancelled");
+    const bestFriends = (friends || []).filter(f => f.priority_level <= 2).map(f => f.name);
 
     return `You are a personal life coach AI. Analyse the following data about my day and life progress, then give me:
 1. A short honest assessment of how I'm doing (2-3 sentences)
@@ -77,11 +85,26 @@ JOURNAL (latest entry):
 ${recentJournal ? `Date: ${recentJournal.date}\nTitle: ${recentJournal.title || "Untitled"}\nContent: ${recentJournal.content?.slice(0, 300)}...` : "No journal entries"}
 
 SKILLS: ${skillSummary.join(", ") || "No skills tracked"}
-BOOKS READING: ${readingBooks.map(b => `${b.title} - ${b.current_page || 0}/${b.total_pages || "?"} pages`).join(", ") || "None"}
+
+BOOKS/LEARNING: ${readingBooks.map(b => `${b.title} (${b.status}) - ${b.current_page || 0}/${b.total_pages || "?"} pages`).join(", ") || "None active"}
+
 AFFIRMATIONS: ${(affirmations || []).map(a => a.text).join(" | ") || "None set"}
+
 FEARS: Total: ${totalFears}, Conquered: ${conqueredFears}, Active: ${(fears || []).filter(f => !f.conquered).map(f => f.fear).join(", ") || "none"}
-COMFORT ZONE: ${recentComfort.map(c => `"${c.action}" (${c.difficulty}/5)`).join(", ") || "None logged"}
+
+COMFORT ZONE PUSHES (recent): ${recentComfort.map(c => `"${c.action}" (${c.difficulty}/5)`).join(", ") || "None logged"}
+
 MONEY: Income ₹${totalIncome.toLocaleString()}, Expenses ₹${totalExpense.toLocaleString()}, Balance ₹${(totalIncome - totalExpense).toLocaleString()}
+
+REWARDS: ${unlockedRewards} unlocked out of ${(rewards || []).length} total
+
+ACHIEVEMENTS/GOALS:
+${(achievements || []).map(a => `- ${a.title}: target ${a.target_value}, deadline ${a.target_date || "none"}`).join("\n") || "No goals set"}
+
+ACTIVE PLANS:
+${activePlans.map(p => `- ${p.title} (priority: ${p.priority === 1 ? "High" : p.priority === 2 ? "Medium" : "Low"}, category: ${p.category || "none"})`).join("\n") || "No active plans"}
+
+CLOSE FRIENDS/NETWORK: ${bestFriends.join(", ") || "None added"} (${(friends || []).length} total connections)
 --- END DATA ---
 
 Now give me my personalised daily analysis and instructions.`;
@@ -117,12 +140,56 @@ function parseResponse(text) {
     return sections;
 }
 
+async function callGroq(messages) {
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${GROQ_API_KEY}` },
+        body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages, temperature: 0.7, max_tokens: 1024 }),
+    });
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    const json = await res.json();
+    return json.choices[0].message.content;
+}
+
 export default function AICoach() {
+    const [tab, setTab] = useState("analysis");
     const [analysis, setAnalysis] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [open, setOpen] = useState({});
     const [lastRun, setLastRun] = useState(null);
+    const [chatMessages, setChatMessages] = useState([{ role: "assistant", content: "Hey! I'm your AI Coach. Ask me anything about your goals, habits, progress, or life in general. 💪" }]);
+    const [chatInput, setChatInput] = useState("");
+    const [chatLoading, setChatLoading] = useState(false);
+    const [chatData, setChatData] = useState(null);
+    const [analysisHistory, setAnalysisHistory] = useState([]);
+    const [showHistory, setShowHistory] = useState(false);
+    const [copiedKey, setCopiedKey] = useState(null);
+    const chatEndRef = useRef(null);
+
+    useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatMessages]);
+
+    async function sendMessage(e) {
+        e.preventDefault();
+        const text = chatInput.trim();
+        if (!text || chatLoading) return;
+        setChatInput("");
+        const userMsg = { role: "user", content: text };
+        setChatMessages(prev => [...prev, userMsg]);
+        setChatLoading(true);
+        try {
+            let data = chatData;
+            if (!data) { data = await fetchAllData(); setChatData(data); }
+            const systemPrompt = `You are a personal AI life coach. You have access to the user's data:\n${buildPrompt(data)}\n\nAnswer the user's questions directly and helpfully. Be concise, honest, and motivating.`;
+            const history = [...chatMessages, userMsg].filter(m => m.role !== "system");
+            const reply = await callGroq([{ role: "system", content: systemPrompt }, ...history]);
+            setChatMessages(prev => [...prev, { role: "assistant", content: reply }]);
+        } catch (err) {
+            setChatMessages(prev => [...prev, { role: "assistant", content: `Error: ${err.message}` }]);
+        } finally {
+            setChatLoading(false);
+        }
+    }
 
     async function runAnalysis() {
         if (!GROQ_API_KEY) { setError("Groq API key not found."); return; }
@@ -130,17 +197,13 @@ export default function AICoach() {
         try {
             const data = await fetchAllData();
             const prompt = buildPrompt(data);
-            const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${GROQ_API_KEY}` },
-                body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }], temperature: 0.7, max_tokens: 1024 }),
-            });
-            if (!res.ok) throw new Error(`API error: ${res.status}`);
-            const json = await res.json();
-            const text = json.choices[0].message.content;
+            const text = await callGroq([{ role: "user", content: prompt }]);
             if (!text) throw new Error("No response from AI");
-            setAnalysis(parseResponse(text));
-            setLastRun(new Date().toLocaleTimeString());
+            const parsed = parseResponse(text);
+            const ts = new Date();
+            setAnalysis(parsed);
+            setLastRun(ts.toLocaleTimeString());
+            setAnalysisHistory(prev => [{ parsed, time: ts.toLocaleTimeString(), date: ts.toLocaleDateString() }, ...prev].slice(0, 10));
             setOpen({ assessment: true, doing_well: true, attention: true, actions: true, motivation: true });
         } catch (err) {
             setError(err.message);
@@ -150,6 +213,21 @@ export default function AICoach() {
     }
 
     function toggle(key) { setOpen(prev => ({ ...prev, [key]: !prev[key] })); }
+
+    function copySection(key, content) {
+        navigator.clipboard.writeText(content);
+        setCopiedKey(key);
+        setTimeout(() => setCopiedKey(null), 2000);
+    }
+
+    function copyAll() {
+        const text = SECTIONS.map(s => analysis[s.key] ? `## ${s.label}\n${analysis[s.key]}` : "").filter(Boolean).join("\n\n");
+        navigator.clipboard.writeText(text);
+        setCopiedKey("all");
+        setTimeout(() => setCopiedKey(null), 2000);
+    }
+
+    function quickAsk(q) { setChatInput(q); }
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-[#020617] text-slate-200 overflow-x-hidden">
@@ -188,6 +266,20 @@ export default function AICoach() {
 
             <div className="relative z-10 max-w-2xl mx-auto px-4 py-14 ai-body">
 
+                {/* Tab Switcher */}
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+                    className="flex gap-2 glass-card rounded-2xl p-1.5 mb-8 border border-white/5">
+                    {[{ id: "analysis", label: "Analysis", Icon: BarChart2 }, { id: "chat", label: "Chat", Icon: MessageCircle }].map(({ id, label, Icon }) => (
+                        <button key={id} onClick={() => setTab(id)}
+                            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold uppercase tracking-widest transition-all duration-200"
+                            style={tab === id
+                                ? { background: "rgba(34,211,238,0.12)", color: "#22d3ee", border: "1px solid rgba(34,211,238,0.25)" }
+                                : { color: "#475569", border: "1px solid transparent" }}>
+                            <Icon size={15} />{label}
+                        </button>
+                    ))}
+                </motion.div>
+
                 {/* Header */}
                 <motion.div initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.6 }} className="text-center mb-14">
 
@@ -211,38 +303,76 @@ export default function AICoach() {
                 </motion.div>
 
                 {/* Info strip */}
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+                {tab === "analysis" && <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
                     className="glass-card rounded-2xl p-4 mb-8 flex items-center gap-4 border border-white/5">
                     <div className="flex gap-2 flex-wrap">
-                        {["Todos","Mood","Habits","Journal","Skills","Books","Fears","Money"].map(tag => (
+                        {["Todos","Mood","Habits","Journal","Skills","Books","Fears","Affirmations","Comfort Zone","Money","Rewards","Goals","Plans","Friends"].map(tag => (
                             <span key={tag} className="text-[10px] font-semibold px-2.5 py-1 rounded-full border border-cyan-500/20 text-cyan-400/70 bg-cyan-500/5 tracking-wider uppercase">{tag}</span>
                         ))}
                     </div>
-                </motion.div>
+                </motion.div>}
 
                 {/* CTA Button */}
-                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3 }} className="text-center mb-10">
-                    <button onClick={runAnalysis} disabled={loading}
-                        className="relative group inline-flex items-center gap-3 px-10 py-4 rounded-2xl font-bold text-sm uppercase tracking-widest transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
-                        style={{ background: "linear-gradient(135deg, rgba(34,211,238,0.15) 0%, rgba(167,139,250,0.15) 100%)", border: "1px solid rgba(34,211,238,0.25)", color: "#e2e8f0", boxShadow: loading ? "none" : "0 0 40px rgba(34,211,238,0.1), 0 0 80px rgba(167,139,250,0.05)" }}>
-                        <span className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-violet-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                        {loading
-                            ? <><Loader2 size={18} className="animate-spin text-cyan-400" /><span className="text-cyan-300">Analysing your day...</span></>
-                            : analysis
-                                ? <><RefreshCw size={18} className="text-cyan-400" /><span>Re-analyse</span></>
-                                : <><Sparkles size={18} className="text-cyan-400" /><span>Analyse My Day</span><Zap size={14} className="text-violet-400" /></>
-                        }
-                    </button>
+                {tab === "analysis" && <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3 }} className="text-center mb-10">
+                    <div className="flex items-center justify-center gap-3">
+                        <button onClick={runAnalysis} disabled={loading}
+                            className="relative group inline-flex items-center gap-3 px-10 py-4 rounded-2xl font-bold text-sm uppercase tracking-widest transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
+                            style={{ background: "linear-gradient(135deg, rgba(34,211,238,0.15) 0%, rgba(167,139,250,0.15) 100%)", border: "1px solid rgba(34,211,238,0.25)", color: "#e2e8f0", boxShadow: loading ? "none" : "0 0 40px rgba(34,211,238,0.1), 0 0 80px rgba(167,139,250,0.05)" }}>
+                            <span className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-violet-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            {loading
+                                ? <><Loader2 size={18} className="animate-spin text-cyan-400" /><span className="text-cyan-300">Analysing your day...</span></>
+                                : analysis
+                                    ? <><RefreshCw size={18} className="text-cyan-400" /><span>Re-analyse</span></>
+                                    : <><Sparkles size={18} className="text-cyan-400" /><span>Analyse My Day</span><Zap size={14} className="text-violet-400" /></>
+                            }
+                        </button>
+                        {analysisHistory.length > 0 && (
+                            <button onClick={() => setShowHistory(v => !v)} title="History"
+                                className="w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200"
+                                style={{ background: showHistory ? "rgba(167,139,250,0.15)" : "rgba(255,255,255,0.04)", border: showHistory ? "1px solid rgba(167,139,250,0.3)" : "1px solid rgba(255,255,255,0.08)" }}>
+                                <History size={16} className={showHistory ? "text-violet-400" : "text-slate-500"} />
+                            </button>
+                        )}
+                        {analysis && (
+                            <button onClick={copyAll} title="Copy all"
+                                className="w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200"
+                                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                                {copiedKey === "all" ? <Check size={16} className="text-emerald-400" /> : <Copy size={16} className="text-slate-500" />}
+                            </button>
+                        )}
+                    </div>
                     {lastRun && (
                         <p className="text-xs text-slate-700 font-mono mt-3 flex items-center justify-center gap-1.5">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
                             Last analysed at {lastRun}
                         </p>
                     )}
-                </motion.div>
+                </motion.div>}
+
+                {/* History Panel */}
+                <AnimatePresence>
+                {tab === "analysis" && showHistory && analysisHistory.length > 0 && (
+                    <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+                        className="glass-card rounded-2xl border border-violet-500/20 mb-6 overflow-hidden">
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
+                            <span className="text-xs font-bold uppercase tracking-widest text-violet-400 flex items-center gap-2"><History size={13} />History</span>
+                            <button onClick={() => setShowHistory(false)}><X size={14} className="text-slate-600" /></button>
+                        </div>
+                        <div className="divide-y divide-white/5">
+                            {analysisHistory.map((h, i) => (
+                                <button key={i} onClick={() => { setAnalysis(h.parsed); setLastRun(h.time); setOpen({ assessment: true, doing_well: true, attention: true, actions: true, motivation: true }); setShowHistory(false); }}
+                                    className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-white/[0.02] transition-colors">
+                                    <span className="text-xs text-slate-400">{h.date} · {h.time}</span>
+                                    <span className="text-[10px] text-violet-400 font-semibold uppercase tracking-wider">Restore</span>
+                                </button>
+                            ))}
+                        </div>
+                    </motion.div>
+                )}
+                </AnimatePresence>
 
                 {/* Error */}
-                {error && (
+                {tab === "analysis" && error && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                         className="glass-card rounded-2xl p-4 mb-6 border border-red-500/30 flex items-center gap-3">
                         <AlertTriangle size={16} className="text-red-400 shrink-0" />
@@ -251,7 +381,7 @@ export default function AICoach() {
                 )}
 
                 {/* Loading skeleton */}
-                {loading && (
+                {tab === "analysis" && loading && (
                     <div className="space-y-4">
                         {SECTIONS.map((s, i) => (
                             <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
@@ -270,9 +400,72 @@ export default function AICoach() {
                     </div>
                 )}
 
+                {/* Chat Mode */}
+                <AnimatePresence mode="wait">
+                {tab === "chat" && (
+                    <motion.div key="chat" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                        <div className="glass-card rounded-2xl border border-white/5 flex flex-col" style={{ height: "520px" }}>
+                            {/* Messages */}
+                            <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                                {chatMessages.map((msg, i) => (
+                                    <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                                        {msg.role === "assistant" && (
+                                            <div className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 mr-2 mt-0.5"
+                                                style={{ background: "rgba(34,211,238,0.12)", border: "1px solid rgba(34,211,238,0.25)" }}>
+                                                <Bot size={13} className="text-cyan-400" />
+                                            </div>
+                                        )}
+                                        <div className="max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-6 whitespace-pre-wrap"
+                                            style={msg.role === "user"
+                                                ? { background: "rgba(167,139,250,0.15)", border: "1px solid rgba(167,139,250,0.25)", color: "#e2e8f0" }
+                                                : { background: "rgba(15,23,42,0.6)", border: "1px solid rgba(255,255,255,0.06)", color: "#cbd5e1" }}>
+                                            {msg.content}
+                                        </div>
+                                    </div>
+                                ))}
+                                {chatLoading && (
+                                    <div className="flex justify-start">
+                                        <div className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 mr-2"
+                                            style={{ background: "rgba(34,211,238,0.12)", border: "1px solid rgba(34,211,238,0.25)" }}>
+                                            <Bot size={13} className="text-cyan-400" />
+                                        </div>
+                                        <div className="px-4 py-3 rounded-2xl" style={{ background: "rgba(15,23,42,0.6)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                                            <Loader2 size={15} className="animate-spin text-cyan-400" />
+                                        </div>
+                                    </div>
+                                )}
+                                <div ref={chatEndRef} />
+                            </div>
+                            {/* Quick Ask */}
+                            <div className="px-4 pt-3 pb-2 flex gap-2 flex-wrap border-t border-white/5">
+                                {["How are my habits?", "Rate my week", "What to focus on?", "Money advice", "Motivate me"].map(q => (
+                                    <button key={q} type="button" onClick={() => quickAsk(q)}
+                                        className="text-[11px] px-3 py-1.5 rounded-full font-medium transition-all duration-200"
+                                        style={{ background: "rgba(34,211,238,0.07)", border: "1px solid rgba(34,211,238,0.18)", color: "#67e8f9" }}>
+                                        {q}
+                                    </button>
+                                ))}
+                            </div>
+                            {/* Input */}
+                            <form onSubmit={sendMessage} className="p-4 border-t border-white/5 flex gap-3">
+                                <input value={chatInput} onChange={e => setChatInput(e.target.value)}
+                                    placeholder="Ask your coach anything..."
+                                    className="flex-1 bg-transparent text-sm text-slate-200 placeholder-slate-600 outline-none px-4 py-2.5 rounded-xl"
+                                    style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }} />
+                                <button type="submit" disabled={chatLoading || !chatInput.trim()}
+                                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 disabled:opacity-40"
+                                    style={{ background: "rgba(34,211,238,0.15)", border: "1px solid rgba(34,211,238,0.3)" }}>
+                                    <Send size={15} className="text-cyan-400" />
+                                </button>
+                            </form>
+                        </div>
+                    </motion.div>
+                )}
+                </AnimatePresence>
+
                 {/* Results */}
                 <AnimatePresence>
-                    {analysis && !loading && (
+                    {tab === "analysis" && analysis && !loading && (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
                             {SECTIONS.map(({ key, label, color, grad, Icon, glow }, idx) => {
                                 const content = analysis[key];
@@ -285,22 +478,27 @@ export default function AICoach() {
                                         style={{ borderColor: color + "25", boxShadow: isOpen ? `0 0 30px ${glow}` : "none" }}>
 
                                         {/* Header */}
-                                        <button onClick={() => toggle(key)}
-                                            className={`w-full flex items-center justify-between px-5 py-4 text-left transition-all duration-200 bg-gradient-to-r ${grad}`}>
-                                            <div className="flex items-center gap-3">
+                                        <div className={`flex items-center bg-gradient-to-r ${grad}`}>
+                                            <button onClick={() => toggle(key)} className="flex-1 flex items-center gap-3 px-5 py-4 text-left">
                                                 <div className="w-8 h-8 rounded-xl flex items-center justify-center"
                                                     style={{ background: color + "20", border: `1px solid ${color}30` }}>
                                                     <Icon size={15} style={{ color }} />
                                                 </div>
                                                 <span className="ai-title font-bold text-sm tracking-wide" style={{ color }}>{label}</span>
+                                            </button>
+                                            <div className="flex items-center gap-1.5 pr-4">
+                                                <button onClick={() => copySection(key, content)}
+                                                    className="w-6 h-6 rounded-lg flex items-center justify-center transition-all"
+                                                    style={{ background: color + "15", border: `1px solid ${color}20` }}>
+                                                    {copiedKey === key ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} style={{ color }} />}
+                                                </button>
+                                                <button onClick={() => toggle(key)}
+                                                    className="w-6 h-6 rounded-lg flex items-center justify-center"
+                                                    style={{ background: color + "15", border: `1px solid ${color}20` }}>
+                                                    {isOpen ? <ChevronUp size={13} style={{ color }} /> : <ChevronDown size={13} style={{ color }} />}
+                                                </button>
                                             </div>
-                                            <div className="w-6 h-6 rounded-lg flex items-center justify-center"
-                                                style={{ background: color + "15", border: `1px solid ${color}20` }}>
-                                                {isOpen
-                                                    ? <ChevronUp size={13} style={{ color }} />
-                                                    : <ChevronDown size={13} style={{ color }} />}
-                                            </div>
-                                        </button>
+                                        </div>
 
                                         {/* Content */}
                                         <AnimatePresence>
