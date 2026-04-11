@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { showLocalNotification } from './pushNotifications';
 
-const INTERVAL_MS = 1 * 60 * 1000; // 5 minutes
+const INTERVAL_MS = 30 * 1000; // 30 seconds (testing)
 
 let lastShownIndex = -1;
 
