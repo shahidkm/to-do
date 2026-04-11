@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import NotificationSetup from "./NotificationSetup";
 import {
   Home, BarChart2, Gift, Smile, Flame, BookOpen, Timer,
   Map, Sparkles, TrendingUp, ClipboardList, FolderOpen,
@@ -265,6 +266,9 @@ export default function Navbar() {
                 <Dropdown key={group.label} group={group} isActive={isActive} onNavigate={go} />
               ))}
             </div>
+
+            {/* Notification Bell */}
+            <NotificationSetup />
 
             {/* Hamburger */}
             <button className="nb-mob-btn"

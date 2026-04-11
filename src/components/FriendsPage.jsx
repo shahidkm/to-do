@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
+import { showLocalNotification } from "../utils/pushNotifications";
 import {
   Plus,
   Users,
@@ -20,6 +21,8 @@ import {
   Target,
   CheckCircle2,
   AlertCircle,
+  ChevronDown,
+  BookOpen,
 } from "lucide-react";
 import Navbar from "./NavBar";
 
@@ -97,6 +100,7 @@ export default function FriendsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPriority, setSelectedPriority] = useState(null);
 
+  const [guideOpen, setGuideOpen] = useState(false);
   const [tipsModal, setTipsModal] = useState(null); // friend object
   const [goalModal, setGoalModal] = useState(null); // friend object
 
@@ -153,6 +157,19 @@ export default function FriendsPage() {
   useEffect(() => {
     fetchFriends();
   }, []);
+
+  // Fire local notifications for overdue friends once data loads
+  useEffect(() => {
+    if (friends.length === 0) return;
+    const overdueFriends = friends.filter(isOverdue);
+    if (overdueFriends.length === 0) return;
+    const names = overdueFriends.slice(0, 3).map(f => f.name).join(', ');
+    const extra = overdueFriends.length > 3 ? ` +${overdueFriends.length - 3} more` : '';
+    showLocalNotification(
+      `👥 ${overdueFriends.length} friend${overdueFriends.length > 1 ? 's' : ''} need your attention`,
+      `You haven't contacted: ${names}${extra}`
+    );
+  }, [friends]);
 
   async function fetchFriends() {
     setLoading(true);
@@ -319,6 +336,54 @@ export default function FriendsPage() {
               <span>Add Connection</span>
             </button>
           </div>
+        </div>
+
+        {/* How to Make Friends Guide */}
+        <div className="dash-glass rounded-2xl mb-8 overflow-hidden border border-fuchsia-500/10">
+          <button onClick={() => setGuideOpen(v => !v)}
+            className="w-full flex items-center justify-between px-5 py-4 hover:bg-white/[0.02] transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-fuchsia-500/10 border border-fuchsia-500/20">
+                <BookOpen size={15} className="text-fuchsia-400" />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-bold text-gray-200">How to Approach New People & Build Close Friends</p>
+                <p className="text-[10px] font-mono text-gray-500 tracking-widest uppercase">9-step social guide</p>
+              </div>
+            </div>
+            <ChevronDown size={16} className={`text-gray-500 transition-transform duration-300 ${guideOpen ? "rotate-180" : ""}`} />
+          </button>
+
+          {guideOpen && (
+            <div className="px-5 pb-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 border-t border-white/5 pt-4">
+              {[
+                { step: 1, title: "Start Conversation", color: "text-fuchsia-400", border: "border-fuchsia-500/20", bg: "bg-fuchsia-500/5", tips: ["Smile + simple greeting", "Ask easy questions (name, work, place)", "Don't overthink"] },
+                { step: 2, title: "Show Interest", color: "text-rose-400", border: "border-rose-500/20", bg: "bg-rose-500/5", tips: ["Ask open-ended questions", "Listen carefully", "Maintain eye contact"] },
+                { step: 3, title: "Share About Yourself", color: "text-amber-400", border: "border-amber-500/20", bg: "bg-amber-500/5", tips: ["Talk a little about your interests", "Relate to what they say", "Keep it balanced (not one-sided)"] },
+                { step: 4, title: "Find Common Ground", color: "text-emerald-400", border: "border-emerald-500/20", bg: "bg-emerald-500/5", tips: ["Look for shared interests", "Agree or connect on small things", "Use: \"Same here\", \"I like that too\""] },
+                { step: 5, title: "Keep It Natural", color: "text-cyan-400", border: "border-cyan-500/20", bg: "bg-cyan-500/5", tips: ["Be yourself", "Don't try to impress", "It's okay to be slightly awkward"] },
+                { step: 6, title: "Take Contact", color: "text-blue-400", border: "border-blue-500/20", bg: "bg-blue-500/5", tips: ["Ask for WhatsApp / Instagram", "Suggest meeting again", "Example: \"Let's catch up sometime\""] },
+                { step: 7, title: "Follow Up", color: "text-violet-400", border: "border-violet-500/20", bg: "bg-violet-500/5", tips: ["Send a message later", "Check in casually", "Keep conversations going"] },
+                { step: 8, title: "Be Consistent", color: "text-pink-400", border: "border-pink-500/20", bg: "bg-pink-500/5", tips: ["Talk regularly", "Spend time together", "Build trust slowly"] },
+                { step: 9, title: "Accept Reality", color: "text-slate-400", border: "border-slate-500/20", bg: "bg-slate-500/5", tips: ["Not everyone will connect", "Focus on people who respond well"] },
+              ].map(({ step, title, color, border, bg, tips }) => (
+                <div key={step} className={`rounded-xl p-4 border ${border} ${bg}`}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className={`text-[10px] font-black font-mono ${color} bg-black/20 px-2 py-0.5 rounded-md border ${border}`}>0{step}</span>
+                    <h4 className={`text-sm font-bold ${color}`}>{title}</h4>
+                  </div>
+                  <ul className="space-y-1.5">
+                    {tips.map((tip, i) => (
+                      <li key={i} className="flex items-start gap-2 text-xs text-gray-400">
+                        <span className={`mt-1.5 w-1 h-1 rounded-full shrink-0 ${color.replace("text-", "bg-")}`} />
+                        {tip}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Stats Overview */}
