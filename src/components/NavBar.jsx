@@ -5,7 +5,7 @@ import {
   Map, Sparkles, TrendingUp, ClipboardList, FolderOpen,
   Medal, Zap, Swords, Users, Wallet, Star, ScrollText,
   Brain, Activity, Trophy, ChevronDown, Menu, X,
-  GraduationCap, Gem, Clock, Heart, Images, Mic2, Shield, Bot
+  GraduationCap, Gem, Clock, Heart, Images, Mic2, Shield, Bot, FileText
 } from "lucide-react";
 
 // ─── All nav groups with every route ──────────────────────────────────────
@@ -35,10 +35,11 @@ const NAV_GROUPS = [
     color: "#a78bfa",
     Icon: Brain,
     items: [
-      { label: "Skills Tracker",  path: "/skills",       Icon: Brain },
-      { label: "Books & Courses", path: "/books",        Icon: BookOpen },
-      { label: "Plans",           path: "/plans",        Icon: Map },
-      { label: "Inspirations",    path: "/inspirations", Icon: Sparkles },
+      { label: "Skills Tracker",  path: "/skills",        Icon: Brain },
+      { label: "Books & Courses", path: "/books",         Icon: BookOpen },
+      { label: "Plans",           path: "/plans",         Icon: Map },
+      { label: "Inspirations",    path: "/inspirations",  Icon: Sparkles },
+      { label: "Script Writer",   path: "/script-writer", Icon: FileText },
     ],
   },
   {
