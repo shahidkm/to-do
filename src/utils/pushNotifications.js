@@ -62,10 +62,18 @@ export async function isPushEnabled() {
 }
 
 // Show a local notification immediately (no server needed)
-export function showLocalNotification(title, body) {
+export function showLocalNotification(title, body, options = {}) {
   if (Notification.permission === 'granted') {
     navigator.serviceWorker.ready.then((reg) => {
-      reg.showNotification(title, { body });
+      reg.showNotification(title, {
+        body,
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
+        vibrate: [100, 50, 100],
+        renotify: true,
+        timestamp: Date.now(),
+        ...options,
+      });
     });
   }
 }

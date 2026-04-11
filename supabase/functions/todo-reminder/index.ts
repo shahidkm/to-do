@@ -23,6 +23,44 @@ Deno.serve(async (req) => {
     return new Response('Unauthorized', { status: 401 });
   }
 
+  const body = await req.json().catch(() => ({}));
+  const type = body.type || 'reminder';
+
+  // Morning notification
+  if (type === 'morning') {
+    const payload = JSON.stringify({
+      title: '\uD83C\uDF05 Good Morning!',
+      body: 'Start your day right \u2014 add your tasks for today.',
+      tag: 'morning-reminder',
+    });
+    const { data: subs } = await supabase.from('push_subscriptions').select('id, endpoint, subscription');
+    let sent = 0;
+    await Promise.all((subs ?? []).map(async (row) => {
+      try { await webpush.sendNotification(JSON.parse(row.subscription), payload); sent++; } catch {}
+    }));
+    return new Response(JSON.stringify({ sent, type: 'morning' }));
+  }
+
+  // Night notification
+  if (type === 'night') {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const { data: todos } = await supabase.from('ToDo').select('completed').eq('active', true)
+      .gte('created_at', `${todayStr}T00:00:00`).lte('created_at', `${todayStr}T23:59:59`);
+    const done = (todos ?? []).filter((t) => t.completed).length;
+    const pending = (todos ?? []).filter((t) => !t.completed).length;
+    const payload = JSON.stringify({
+      title: '\uD83C\uDF19 Evening Check-in',
+      body: pending > 0 ? `${done} done, ${pending} still pending. Update your tasks!` : '\uD83C\uDF89 All tasks completed today. Amazing work!',
+      tag: 'night-reminder',
+    });
+    const { data: subs } = await supabase.from('push_subscriptions').select('id, endpoint, subscription');
+    let sent = 0;
+    await Promise.all((subs ?? []).map(async (row) => {
+      try { await webpush.sendNotification(JSON.parse(row.subscription), payload); sent++; } catch {}
+    }));
+    return new Response(JSON.stringify({ sent, type: 'night' }));
+  }
+
   // 1. Get today's incomplete todos
   const todayStr = new Date().toISOString().split('T')[0];
   const { data: todos, error } = await supabase
@@ -43,10 +81,14 @@ Deno.serve(async (req) => {
   const todo = todos[lastIndex];
 
   const payload = JSON.stringify({
-    title: '📝 Task Reminder',
-    body: `Don't forget: ${todo.title}`,
+    title: `⚡ Task Reminder  •  ${todos.length} pending`,
+    body: todo.title,
     url: '/',
     tag: 'todo-reminder',
+    actions: [
+      { action: 'open', title: '✅ Mark Done' },
+      { action: 'dismiss', title: '⏰ Remind Later' },
+    ],
   });
 
   // 3. Fetch all push subscriptions
