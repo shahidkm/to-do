@@ -5,26 +5,18 @@ const INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
 
 let lastShownIndex = -1;
 
-// Schedule a daily notification at a specific hour & minute
 function scheduleDailyAt(hour, minute, callback) {
   function msUntilNext() {
     const now = new Date();
     const next = new Date();
     next.setHours(hour, minute, 0, 0);
-    if (next <= now) next.setDate(next.getDate() + 1); // already passed today, schedule tomorrow
+    if (next <= now) next.setDate(next.getDate() + 1);
     return next.getTime() - now.getTime();
   }
-
-  let timeoutId;
-  function schedule() {
-    timeoutId = setTimeout(() => {
-      callback();
-      // Re-schedule for next day
-      timeoutId = setInterval(callback, 24 * 60 * 60 * 1000);
-    }, msUntilNext());
-  }
-
-  schedule();
+  let timeoutId = setTimeout(function run() {
+    callback();
+    timeoutId = setTimeout(run, 24 * 60 * 60 * 1000);
+  }, msUntilNext());
   return () => clearTimeout(timeoutId);
 }
 
@@ -32,20 +24,17 @@ export function useTodoReminder(todos) {
   const todosRef = useRef(todos);
   todosRef.current = todos;
 
+  const startedRef = useRef(false);
+
   useEffect(() => {
     if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    // Wait until todos are actually loaded — avoid firing on empty initial state
+    if (todos.length === 0 || startedRef.current) return;
+    startedRef.current = true;
 
-    // ── 30-min task reminder ──────────────────────────────
     function fireReminder() {
       const pending = todosRef.current.filter((t) => !t.completed);
-      if (pending.length === 0) {
-        showLocalNotification(
-          '🎉 All Done!',
-          'You completed all your tasks for today. Great work!',
-          { tag: 'all-done' }
-        );
-        return;
-      }
+      if (pending.length === 0) return; // skip silently — no false "all done"
       lastShownIndex = (lastShownIndex + 1) % pending.length;
       const todo = pending[lastShownIndex];
       showLocalNotification(
@@ -61,10 +50,10 @@ export function useTodoReminder(todos) {
       );
     }
 
-    fireReminder();
+    // First reminder after 30 min, not immediately on load
     const intervalId = setInterval(fireReminder, INTERVAL_MS);
 
-    // ── 7:00 AM — Morning reminder to add todos ───────────
+    // 7:00 AM IST — morning reminder
     const cancelMorning = scheduleDailyAt(7, 0, () => {
       showLocalNotification(
         '🌅 Good Morning!',
@@ -73,7 +62,7 @@ export function useTodoReminder(todos) {
       );
     });
 
-    // ── 9:00 PM — Night reminder to update todos ─────────
+    // 9:00 PM IST — night reminder
     const cancelNight = scheduleDailyAt(21, 0, () => {
       const pending = todosRef.current.filter((t) => !t.completed);
       const done = todosRef.current.filter((t) => t.completed).length;
@@ -91,5 +80,5 @@ export function useTodoReminder(todos) {
       cancelMorning();
       cancelNight();
     };
-  }, []);
+  }, [todos.length]); // only runs once when todos first load
 }
