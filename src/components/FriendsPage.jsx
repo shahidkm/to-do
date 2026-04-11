@@ -14,6 +14,12 @@ import {
   Crown,
   Award,
   Zap,
+  MessageCircle,
+  Calendar,
+  Clock,
+  Target,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import Navbar from "./NavBar";
 
@@ -91,12 +97,58 @@ export default function FriendsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPriority, setSelectedPriority] = useState(null);
 
+  const [tipsModal, setTipsModal] = useState(null); // friend object
+  const [goalModal, setGoalModal] = useState(null); // friend object
+
   const [form, setForm] = useState({
     name: "",
     phone: "",
     priority_level: 3,
     image_url: "",
+    meet_goal: "monthly",
   });
+
+  const MEET_GOALS = [
+    { value: "weekly", label: "Weekly", days: 7 },
+    { value: "monthly", label: "Monthly", days: 30 },
+    { value: "quarterly", label: "Quarterly", days: 90 },
+  ];
+
+  const RECONNECT_TIPS = [
+    "Hey! Been a while — how have you been?",
+    "I saw something that reminded me of you. Want to catch up?",
+    "Let's grab coffee or a call soon!",
+    "What's new with you lately?",
+    "I miss hanging out. When are you free?",
+    "Thinking of you — hope everything's going well!",
+    "We should plan something soon. Any ideas?",
+    "Random thought: remember when we [shared memory]? Good times!",
+  ];
+
+  function daysSinceContact(friend) {
+    if (!friend.last_contacted) return null;
+    const diff = Date.now() - new Date(friend.last_contacted).getTime();
+    return Math.floor(diff / (1000 * 60 * 60 * 24));
+  }
+
+  function isOverdue(friend) {
+    const days = daysSinceContact(friend);
+    if (days === null) return false;
+    const goal = MEET_GOALS.find(g => g.value === (friend.meet_goal || "monthly"));
+    return days > (goal?.days || 30);
+  }
+
+  async function logContact(friend) {
+    const today = new Date().toISOString().split("T")[0];
+    await supabase.from("friends").update({ last_contacted: today }).eq("id", friend.id);
+    await fetchFriends();
+  }
+
+  async function saveMeetGoal(friend, goal) {
+    await supabase.from("friends").update({ meet_goal: goal }).eq("id", friend.id);
+    setGoalModal(null);
+    await fetchFriends();
+  }
 
   useEffect(() => {
     fetchFriends();
@@ -128,6 +180,7 @@ export default function FriendsPage() {
       phone: form.phone.trim() || null,
       priority_level: Number(form.priority_level),
       image_url: form.image_url.trim() || null,
+      meet_goal: form.meet_goal || "monthly",
     };
 
     let error;
@@ -159,6 +212,7 @@ export default function FriendsPage() {
       phone: friend.phone || "",
       priority_level: friend.priority_level,
       image_url: friend.image_url || "",
+      meet_goal: friend.meet_goal || "monthly",
     });
     setFormOpen(true);
   }
@@ -169,6 +223,7 @@ export default function FriendsPage() {
       phone: "",
       priority_level: 3,
       image_url: "",
+      meet_goal: "monthly",
     });
     setEditingFriend(null);
     setFormOpen(false);
@@ -432,6 +487,26 @@ export default function FriendsPage() {
                   />
                 </div>
 
+                {/* Meet Goal */}
+                <div>
+                  <label className="block text-[10px] font-mono tracking-widest uppercase text-gray-400 mb-2">
+                    Meet Frequency Goal
+                  </label>
+                  <div className="flex gap-2">
+                    {MEET_GOALS.map(g => (
+                      <button key={g.value} type="button"
+                        onClick={() => setForm({ ...form, meet_goal: g.value })}
+                        className={`flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest border transition-all ${
+                          form.meet_goal === g.value
+                            ? "bg-fuchsia-500/20 text-fuchsia-400 border-fuchsia-500/50"
+                            : "bg-gray-900/40 text-gray-500 border-white/10 hover:bg-gray-800"
+                        }`}>
+                        {g.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Priority Level */}
                 <div>
                   <label className="block text-[10px] font-mono tracking-widest uppercase text-gray-400 mb-3">
@@ -646,15 +721,56 @@ export default function FriendsPage() {
                             </div>
                           )}
 
+                          {/* Last Contacted Badge */}
+                          <div className="flex items-center gap-2 mb-4 relative z-10">
+                            {(() => {
+                              const days = daysSinceContact(friend);
+                              const overdue = isOverdue(friend);
+                              return (
+                                <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-mono tracking-wider border ${
+                                  overdue
+                                    ? "bg-red-500/10 border-red-500/30 text-red-400"
+                                    : days === null
+                                    ? "bg-gray-800/60 border-white/5 text-gray-500"
+                                    : "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                                }`}>
+                                  {overdue ? <AlertCircle size={10} /> : days === null ? <Clock size={10} /> : <CheckCircle2 size={10} />}
+                                  {days === null ? "Never contacted" : days === 0 ? "Contacted today" : `${days}d ago`}
+                                </div>
+                              );
+                            })()}
+                            <div className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-mono border bg-gray-800/40 border-white/5 text-gray-500">
+                              <Target size={10} />
+                              {friend.meet_goal || "monthly"}
+                            </div>
+                          </div>
+
                           {/* Actions */}
-                          <div className="pt-4 border-t border-white/5 relative z-10 flex gap-2">
-                            <button
-                              onClick={() => editFriend(friend)}
-                              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-900/60 text-gray-300 border border-white/10 rounded-xl font-semibold hover:bg-gray-800 hover:text-white hover:border-white/20 transition-all text-xs tracking-widest uppercase"
-                            >
-                              <Edit2 size={14} />
-                              <span>Configure Option</span>
-                            </button>
+                          <div className="pt-4 border-t border-white/5 relative z-10 space-y-2">
+                            <div className="flex gap-2">
+                              <button onClick={() => logContact(friend)}
+                                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-xl font-semibold hover:bg-emerald-500/20 transition-all text-xs tracking-widest uppercase">
+                                <CheckCircle2 size={13} />
+                                <span>Log Contact</span>
+                              </button>
+                              <button onClick={() => setGoalModal(friend)}
+                                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-violet-500/10 text-violet-400 border border-violet-500/30 rounded-xl font-semibold hover:bg-violet-500/20 transition-all text-xs tracking-widest uppercase">
+                                <Target size={13} />
+                                <span>Set Goal</span>
+                              </button>
+                            </div>
+                            <div className="flex gap-2">
+                              <button onClick={() => setTipsModal(friend)}
+                                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 rounded-xl font-semibold hover:bg-cyan-500/20 transition-all text-xs tracking-widest uppercase">
+                                <MessageCircle size={13} />
+                                <span>Reconnect Tips</span>
+                              </button>
+                              <button onClick={() => editFriend(friend)}
+                                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-900/60 text-gray-300 border border-white/10 rounded-xl font-semibold hover:bg-gray-800 transition-all text-xs tracking-widest uppercase">
+                                <Edit2 size={13} />
+                                <span>Edit</span>
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -666,6 +782,72 @@ export default function FriendsPage() {
           </div>
         )}
       </div>
+
+      {/* Reconnect Tips Modal */}
+      {tipsModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+          <div className="dash-glass rounded-3xl w-full max-w-md border border-cyan-500/20">
+            <div className="p-5 border-b border-white/5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <MessageCircle className="text-cyan-400" size={18} />
+                <span className="text-base font-bold text-gray-200">Reconnect with {tipsModal.name}</span>
+              </div>
+              <button onClick={() => setTipsModal(null)}><X size={18} className="text-gray-500" /></button>
+            </div>
+            <div className="p-5 space-y-2">
+              <p className="text-[10px] font-mono tracking-widest uppercase text-gray-500 mb-3">Conversation starters</p>
+              {RECONNECT_TIPS.map((tip, i) => (
+                <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-gray-900/40 border border-white/5 hover:border-cyan-500/20 transition-colors group cursor-pointer"
+                  onClick={() => { navigator.clipboard?.writeText(tip); }}>
+                  <span className="text-[10px] font-mono text-gray-600 mt-0.5 shrink-0">{String(i+1).padStart(2,"0")}</span>
+                  <p className="text-sm text-gray-300 group-hover:text-cyan-300 transition-colors">{tip}</p>
+                </div>
+              ))}
+              <p className="text-[10px] text-gray-600 text-center pt-2">Click any tip to copy it</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Meet Goal Modal */}
+      {goalModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+          <div className="dash-glass rounded-3xl w-full max-w-sm border border-violet-500/20">
+            <div className="p-5 border-b border-white/5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Target className="text-violet-400" size={18} />
+                <span className="text-base font-bold text-gray-200">Meet Goal — {goalModal.name}</span>
+              </div>
+              <button onClick={() => setGoalModal(null)}><X size={18} className="text-gray-500" /></button>
+            </div>
+            <div className="p-5 space-y-3">
+              <p className="text-[10px] font-mono tracking-widest uppercase text-gray-500 mb-3">How often do you want to connect?</p>
+              {MEET_GOALS.map(g => {
+                const days = daysSinceContact(goalModal);
+                const pct = days === null ? 0 : Math.min(100, Math.round((days / g.days) * 100));
+                const isCurrent = (goalModal.meet_goal || "monthly") === g.value;
+                return (
+                  <button key={g.value} onClick={() => saveMeetGoal(goalModal, g.value)}
+                    className={`w-full p-4 rounded-xl border text-left transition-all ${
+                      isCurrent ? "bg-violet-500/15 border-violet-500/40" : "bg-gray-900/40 border-white/5 hover:border-violet-500/20"
+                    }`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className={`text-sm font-bold ${isCurrent ? "text-violet-400" : "text-gray-300"}`}>{g.label}</span>
+                      <span className="text-[10px] font-mono text-gray-500">every {g.days}d</span>
+                    </div>
+                    <div className="w-full h-1 bg-gray-800 rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full transition-all ${
+                        pct >= 100 ? "bg-red-500" : pct > 60 ? "bg-amber-500" : "bg-emerald-500"
+                      }`} style={{ width: `${pct}%` }} />
+                    </div>
+                    <p className="text-[10px] text-gray-600 mt-1">{days === null ? "No contact logged yet" : `${pct}% of goal used (${days}d since last contact)`}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
