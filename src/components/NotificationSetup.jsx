@@ -27,7 +27,7 @@ export default function NotificationSetup() {
       const result = await enablePushNotifications();
       if (result.ok) {
         setEnabled(true);
-        setTimeout(() => showLocalNotification('✅ Notifications Enabled!', 'You will get task reminders every 5 minutes.'), 500);
+        setTimeout(() => showLocalNotification('✅ Notifications Enabled!', 'You will get task reminders every 30 minutes.'), 500);
       } else if (result.reason === 'denied') {
         alert('Notification permission denied. Enable it in browser/phone settings.');
       } else {

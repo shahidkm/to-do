@@ -111,13 +111,13 @@ export default function GalleryPage() {
                 .gallery-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,0.6), 0 0 20px rgba(0,229,255,0.08); }
             `}</style>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-12">
                 {/* Header */}
                 <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-center mb-12">
                     <div className="inline-flex items-center justify-center p-3 dash-glass rounded-2xl mb-6 text-cyan-400 border border-cyan-500/30 shadow-[0_0_20px_rgba(34,211,238,0.2)]">
                         <Images size={32} />
                     </div>
-                    <h1 className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-slate-500 mb-4 tracking-tight">
+                    <h1 className="text-3xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-slate-500 mb-4 tracking-tight">
                         MY GALLERY
                     </h1>
                     <p className="text-cyan-400/60 font-mono text-sm tracking-[0.3em] uppercase">
@@ -127,7 +127,7 @@ export default function GalleryPage() {
 
                 {/* Upload Card */}
                 <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}
-                    className="dash-glass rounded-3xl p-8 mb-12 max-w-2xl mx-auto">
+                    className="dash-glass rounded-3xl p-4 sm:p-8 mb-8 sm:mb-12 max-w-2xl mx-auto">
                     <h2 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
                         <Upload size={18} className="text-cyan-400" /> Upload Image
                     </h2>
@@ -135,7 +135,7 @@ export default function GalleryPage() {
                     {/* Drop zone */}
                     <div
                         onClick={() => fileRef.current.click()}
-                        className="border-2 border-dashed border-slate-700 hover:border-cyan-500/50 rounded-2xl p-8 text-center cursor-pointer transition-colors mb-4"
+                        className="border-2 border-dashed border-slate-700 hover:border-cyan-500/50 rounded-2xl p-5 sm:p-8 text-center cursor-pointer transition-colors mb-4"
                     >
                         {preview ? (
                             <img src={preview.localUrl} alt="preview" className="max-h-48 mx-auto rounded-xl object-cover" />
@@ -281,16 +281,16 @@ export default function GalleryPage() {
                             animate={{ scale: 1 }}
                             exit={{ scale: 0.9 }}
                             onClick={e => e.stopPropagation()}
-                            className="relative max-w-4xl max-h-[90vh]"
+                            className="relative w-full max-w-4xl max-h-[90vh] px-6"
                         >
-                            <img src={lightbox.url} alt={lightbox.caption || ""} className="max-h-[85vh] max-w-full rounded-2xl object-contain" />
+                            <img src={lightbox.url} alt={lightbox.caption || ""} className="max-h-[80vh] w-full rounded-2xl object-contain" />
                             {lightbox.caption && (
                                 <p className="text-center text-slate-400 text-sm mt-3">{lightbox.caption}</p>
                             )}
-                            <button onClick={() => setLightbox(null)} className="absolute -top-3 -right-3 p-2 bg-slate-800 hover:bg-slate-700 rounded-full border border-white/10 transition-all">
+                            <button onClick={() => setLightbox(null)} className="absolute top-2 right-0 p-2 bg-slate-800 hover:bg-slate-700 rounded-full border border-white/10 transition-all">
                                 <X size={16} className="text-white" />
                             </button>
-                            <button onClick={() => handleDownload(lightbox.url, lightbox.caption)} className="absolute -top-3 -left-3 p-2 bg-emerald-900/80 hover:bg-emerald-800 rounded-full border border-emerald-500/20 transition-all">
+                            <button onClick={() => handleDownload(lightbox.url, lightbox.caption)} className="absolute top-2 left-0 p-2 bg-emerald-900/80 hover:bg-emerald-800 rounded-full border border-emerald-500/20 transition-all">
                                 <Download size={16} className="text-emerald-400" />
                             </button>
                         </motion.div>
