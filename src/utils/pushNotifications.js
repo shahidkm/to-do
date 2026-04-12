@@ -17,7 +17,6 @@ export async function subscribeToPush() {
   const reg = await navigator.serviceWorker.ready;
   const existing = await reg.pushManager.getSubscription();
   if (existing) return existing;
-
   return reg.pushManager.subscribe({
     userVisibleOnly: true,
     applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
@@ -26,10 +25,8 @@ export async function subscribeToPush() {
 
 export async function enablePushNotifications() {
   if (!('Notification' in window)) return { ok: false, reason: 'not_supported' };
-
   const permission = await Notification.requestPermission();
   if (permission !== 'granted') return { ok: false, reason: 'denied' };
-
   try {
     await registerSW();
     const subscription = await subscribeToPush();
@@ -61,19 +58,9 @@ export async function isPushEnabled() {
   return !!sub;
 }
 
-// Show a local notification immediately (no server needed)
-export function showLocalNotification(title, body, options = {}) {
-  if (Notification.permission === 'granted') {
-    navigator.serviceWorker.ready.then((reg) => {
-      reg.showNotification(title, {
-        body,
-        icon: '/icon-192.png',
-        badge: '/icon-192.png',
-        vibrate: [100, 50, 100],
-        renotify: true,
-        timestamp: Date.now(),
-        ...options,
-      });
-    });
-  }
+export function showLocalNotification(title, body) {
+  if (Notification.permission !== 'granted') return;
+  navigator.serviceWorker.ready.then((reg) => {
+    reg.showNotification(title, { body, tag: title, renotify: true });
+  });
 }
