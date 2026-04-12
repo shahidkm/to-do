@@ -1,0 +1,20 @@
+{
+  "name": "To-Do App",
+  "short_name": "To-Do",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "icons": [
+    {
+      "src": "https://tse4.mm.bing.net/th/id/OIP.fjYKswxeeA1XbhNha_drYgHaHh?pid=Api&P=0&h=192",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://tse4.mm.bing.net/th/id/OIP.fjYKswxeeA1XbhNha_drYgHaHh?pid=Api&P=0&h=512",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
