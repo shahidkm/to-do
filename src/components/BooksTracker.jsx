@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, Plus, X, Check, Star, TrendingUp, Pencil, StickyNote } from 'lucide-react';
+import { BookOpen, Plus, X, Check, Star, TrendingUp } from 'lucide-react';
 import Navbar from './NavBar';
 
 const supabase = createClient(
@@ -12,31 +12,24 @@ const supabase = createClient(
 const GLASS = { background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' };
 const STATUS = [
   { key: 'reading',   label: 'Reading',   color: '#22d3ee' },
+    { key: 'learning',   label: 'Learning',   color: '#22d3ee' },
   { key: 'completed', label: 'Completed', color: '#4ade80' },
   { key: 'paused',    label: 'Paused',    color: '#fb923c' },
   { key: 'wishlist',  label: 'Wishlist',  color: '#818cf8' },
-  { key: 'learning',  label: 'Learning',  color: '#22d3ee' },
 ];
 
 export default function BooksTracker() {
   const [books, setBooks]   = useState([]);
-  const [form, setForm]     = useState({ title: '', author: '', total_pages: '', status: 'reading', rating: 0, notes: '' });
+  const [form, setForm]     = useState({ title: '', author: '', total_pages: '', status: 'reading', rating: 0 });
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState(null);
   const [filter, setFilter] = useState('all');
-  const [noteModal, setNoteModal] = useState(null); // book object
-  const [noteText, setNoteText] = useState({});
 
   useEffect(() => { load(); }, []);
 
   const load = async () => {
     const { data } = await supabase.from('books_tracker').select('*').order('created_at', { ascending: false });
     setBooks(data || []);
-  };
-
-  const saveNote = async (id) => {
-    await supabase.from('books_tracker').update({ notes: noteText[id] ?? '' }).eq('id', id);
-    await load();
   };
 
   const save = async () => {
@@ -54,17 +47,9 @@ export default function BooksTracker() {
   };
 
   const updateProgress = async (id, current_page, total_pages) => {
-    const book = books.find(b => b.id === id);
-    const status = current_page >= total_pages ? 'completed' : (book?.status || 'reading');
+    const status = current_page >= total_pages ? 'completed' : 'reading';
     await supabase.from('books_tracker').update({ current_page, status }).eq('id', id);
     await load();
-  };
-
-  const startEdit = (book) => {
-    setForm({ title: book.title, author: book.author || '', total_pages: book.total_pages || '', status: book.status, rating: book.rating || 0, notes: book.notes || '' });
-    setEditing(book.id);
-    setAdding(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const deleteBook = async (id) => {
@@ -73,11 +58,7 @@ export default function BooksTracker() {
   };
 
   const filtered = filter === 'all' ? books : books.filter(b => b.status === filter);
-  const stats = {
-    total: books.length,
-    completed: books.filter(b => b.status === 'completed').length,
-    reading: books.filter(b => b.status === 'reading' || b.status === 'learning').length,
-  };
+  const stats = { total: books.length, completed: books.filter(b => b.status === 'completed').length, reading: books.filter(b => b.status === 'reading').length };
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200">
@@ -132,11 +113,8 @@ export default function BooksTracker() {
           {adding && (
             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
               className="rounded-3xl p-6 mb-6 overflow-hidden" style={GLASS}>
-              <h3 className="text-xs font-bold font-mono uppercase tracking-widest mb-4" style={{ color: '#4ade80' }}>
-                {editing ? 'Edit Book / Course' : 'Add New Book / Course'}
-              </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                <input value={form.title || ''} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Title *"
+                <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Title *"
                   className="px-4 py-3 rounded-xl text-sm text-slate-200 placeholder-slate-600 focus:outline-none"
                   style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.1)' }} />
                 <input value={form.author} onChange={e => setForm(f => ({ ...f, author: e.target.value }))} placeholder="Author / Creator"
@@ -151,15 +129,10 @@ export default function BooksTracker() {
                   {STATUS.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
                 </select>
               </div>
-              <textarea value={form.notes || ''} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Notes (optional)"
-                rows={3} className="w-full px-4 py-3 rounded-xl text-sm text-slate-200 placeholder-slate-600 focus:outline-none resize-none mb-3"
-                style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.1)' }} />
               <div className="flex gap-2">
                 <button onClick={save} className="flex-1 py-3 rounded-xl text-sm font-bold uppercase tracking-wider"
-                  style={{ background: 'rgba(74,222,128,0.2)', border: '1px solid rgba(74,222,128,0.4)', color: '#4ade80' }}>
-                  {editing ? 'Update' : 'Save'}
-                </button>
-                <button onClick={() => { setAdding(false); setEditing(null); setForm({ title: '', author: '', total_pages: '', status: 'reading', rating: 0, notes: '' }); }} className="px-5 py-3 rounded-xl text-slate-500"
+                  style={{ background: 'rgba(74,222,128,0.2)', border: '1px solid rgba(74,222,128,0.4)', color: '#4ade80' }}>Save</button>
+                <button onClick={() => setAdding(false)} className="px-5 py-3 rounded-xl text-slate-500"
                   style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}><X size={16} /></button>
               </div>
             </motion.div>
@@ -189,10 +162,6 @@ export default function BooksTracker() {
                         {[1,2,3,4,5].map(v => <Star key={v} size={12} fill={v <= book.rating ? '#f59e0b' : 'transparent'} className={v <= book.rating ? 'text-amber-400' : 'text-slate-700'} />)}
                       </div>
                     )}
-                    <button onClick={() => { setNoteModal(book); setNoteText(n => ({ ...n, [book.id]: book.notes || '' })); }}
-                      className="text-slate-600 hover:text-yellow-400 transition-all">
-                      <StickyNote size={14} /></button>
-                    <button onClick={() => startEdit(book)} className="text-slate-600 hover:text-cyan-400 transition-all"><Pencil size={14} /></button>
                     <button onClick={() => deleteBook(book.id)} className="text-slate-600 hover:text-rose-400 transition-all"><X size={14} /></button>
                   </div>
                 </div>
@@ -226,38 +195,6 @@ export default function BooksTracker() {
           )}
         </div>
       </div>
-
-      {/* Notes Modal */}
-      <AnimatePresence>
-        {noteModal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)' }}
-            onClick={() => setNoteModal(null)}>
-            <motion.div initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.92, opacity: 0 }}
-              className="w-full max-w-md rounded-3xl p-6" style={GLASS}
-              onClick={e => e.stopPropagation()}>
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="text-xs font-mono uppercase tracking-widest text-yellow-400 mb-0.5">Notes</p>
-                  <h3 className="font-bold text-slate-200">{noteModal.title}</h3>
-                </div>
-                <button onClick={() => setNoteModal(null)} className="text-slate-500 hover:text-slate-300"><X size={18} /></button>
-              </div>
-              <textarea rows={6} value={noteText[noteModal.id] ?? ''}
-                onChange={e => setNoteText(n => ({ ...n, [noteModal.id]: e.target.value }))}
-                placeholder="Write your notes here..."
-                className="w-full px-4 py-3 rounded-xl text-sm text-slate-200 placeholder-slate-600 focus:outline-none resize-none mb-4"
-                style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.1)' }} />
-              <button onClick={async () => { await saveNote(noteModal.id); setNoteModal(null); }}
-                className="w-full py-3 rounded-xl text-sm font-bold uppercase tracking-wider"
-                style={{ background: 'rgba(74,222,128,0.2)', border: '1px solid rgba(74,222,128,0.4)', color: '#4ade80' }}>
-                Save Note
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
