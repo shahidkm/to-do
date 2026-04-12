@@ -568,7 +568,7 @@ export default function TodoList() {
                       {todo.title}
                     </span>
 
-                    <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex gap-1.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => startEdit(todo.id, todo.title)}
                         className="p-1.5 bg-gray-700/50 hover:bg-indigo-500/20 text-gray-400 hover:text-indigo-400 rounded-lg transition-all border border-transparent hover:border-indigo-500/30"
