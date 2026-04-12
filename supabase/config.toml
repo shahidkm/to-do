@@ -4,9 +4,3 @@ port = 54321
 
 [db]
 port = 54322
-
-[functions.send-push]
-verify_jwt = false
-
-[functions.todo-reminder]
-verify_jwt = false

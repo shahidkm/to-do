@@ -1,47 +1,43 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Bell, BellOff } from 'lucide-react';
-import { enablePushNotifications, disablePushNotifications, isPushEnabled, registerSW, showLocalNotification } from '../utils/pushNotifications';
+import { enablePushNotifications, disablePushNotifications, isPushEnabled } from '../utils/pushNotifications';
 
 export default function NotificationSetup() {
   const [enabled, setEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [supported, setSupported] = useState(true);
 
   useEffect(() => {
-    if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-      setSupported(false);
-      return;
-    }
-    registerSW();
     isPushEnabled().then(setEnabled);
   }, []);
 
-  if (!supported) return null;
-
-  async function toggle() {
+  const toggle = async () => {
     setLoading(true);
+    
     if (enabled) {
-      await disablePushNotifications();
-      setEnabled(false);
+      const result = await disablePushNotifications();
+      if (result.success) {
+        setEnabled(false);
+      }
     } else {
       const result = await enablePushNotifications();
-      if (result.ok) {
+      if (result.success) {
         setEnabled(true);
-        setTimeout(() => showLocalNotification('✅ Notifications Enabled!', 'You will get task reminders every 30 minutes.'), 500);
-      } else if (result.reason === 'denied') {
-        alert('Notification permission denied. Enable it in browser/phone settings.');
       } else {
-        alert('Failed to enable notifications.');
+        alert(result.error === 'Permission denied' 
+          ? 'Please enable notifications in your browser settings'
+          : 'Failed to enable notifications'
+        );
       }
     }
+    
     setLoading(false);
-  }
+  };
 
   return (
     <button
       onClick={toggle}
       disabled={loading}
-      title={enabled ? 'Disable notifications' : 'Enable notifications'}
+      title={enabled ? 'Disable background notifications' : 'Enable background notifications'}
       style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         width: 36, height: 36, borderRadius: 10, cursor: loading ? 'wait' : 'pointer',
@@ -53,7 +49,13 @@ export default function NotificationSetup() {
       }}
     >
       {loading ? (
-        <div style={{ width: 14, height: 14, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+        <div style={{ 
+          width: 14, height: 14, 
+          border: '2px solid currentColor', 
+          borderTopColor: 'transparent', 
+          borderRadius: '50%', 
+          animation: 'spin 0.6s linear infinite' 
+        }} />
       ) : enabled ? (
         <Bell size={15} />
       ) : (

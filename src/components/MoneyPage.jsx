@@ -24,6 +24,9 @@ export default function MoneyPage() {
     const [editingShopId, setEditingShopId] = useState(null);
     const [editShopForm, setEditShopForm] = useState({ name: "", amount: "" });
     const [showCompleted, setShowCompleted] = useState(false);
+    const [categories, setCategories] = useState([]);
+    const [newCategoryInput, setNewCategoryInput] = useState("");
+    const [showNewCategory, setShowNewCategory] = useState(false);
 
     const [balanceDetails, setBalanceDetails] = useState({
         totalBalance: 0,
@@ -55,7 +58,23 @@ export default function MoneyPage() {
     useEffect(() => {
         fetchTransactions();
         fetchShoppingPlans();
+        fetchCategories();
     }, []);
+
+    async function fetchCategories() {
+        const { data } = await supabase.from("categories").select("name").order("name");
+        setCategories((data || []).map(c => c.name));
+    }
+
+    async function addCategory(name) {
+        const trimmed = name.trim();
+        if (!trimmed) return;
+        await supabase.from("categories").upsert({ name: trimmed }, { onConflict: "name" });
+        await fetchCategories();
+        setForm(f => ({ ...f, category: trimmed }));
+        setNewCategoryInput("");
+        setShowNewCategory(false);
+    }
 
     async function fetchShoppingPlans() {
         const [{ data: active }, { data: done }] = await Promise.all([
@@ -501,13 +520,55 @@ export default function MoneyPage() {
                             {/* Category */}
                             <div className="relative">
                                 <label className="text-[10px] font-mono tracking-widest uppercase text-gray-400 mb-2 block">Class Index</label>
-                                <input
-                                    type="text"
-                                    placeholder="e.g. Food, Utility, Entertainment"
-                                    className="dash-input w-full px-4 py-3 rounded-xl placeholder-gray-600 focus:ring-1 focus:ring-emerald-500/50"
-                                    value={form.category}
-                                    onChange={(e) => setForm({ ...form, category: e.target.value })}
-                                />
+                                {!showNewCategory ? (
+                                    <div className="flex gap-2">
+                                        <select
+                                            className="dash-input flex-1 px-4 py-3 rounded-xl appearance-none focus:ring-1 focus:ring-emerald-500/50"
+                                            value={form.category}
+                                            onChange={(e) => setForm({ ...form, category: e.target.value })}
+                                            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.5em 1.5em' }}
+                                        >
+                                            <option value="" className="bg-gray-900">-- Select Class Index --</option>
+                                            {categories.map(c => (
+                                                <option key={c} value={c} className="bg-gray-900">{c}</option>
+                                            ))}
+                                        </select>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowNewCategory(true)}
+                                            className="px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 transition-all"
+                                            title="Create new category"
+                                        >
+                                            <Plus size={16} />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            placeholder="New class name..."
+                                            className="dash-input flex-1 px-4 py-3 rounded-xl placeholder-gray-600 focus:ring-1 focus:ring-emerald-500/50"
+                                            value={newCategoryInput}
+                                            onChange={(e) => setNewCategoryInput(e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCategory(newCategoryInput))}
+                                            autoFocus
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => addCategory(newCategoryInput)}
+                                            className="px-3 py-2 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30 transition-all"
+                                        >
+                                            <CheckCircle2 size={16} />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => { setShowNewCategory(false); setNewCategoryInput(""); }}
+                                            className="px-3 py-2 rounded-xl bg-gray-700/50 border border-white/10 text-gray-400 hover:bg-gray-700 transition-all"
+                                        >
+                                            <X size={16} />
+                                        </button>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Date */}
@@ -535,6 +596,8 @@ export default function MoneyPage() {
                                     onClick={() => {
                                         setFormOpen(false);
                                         setEditingId(null);
+                                        setShowNewCategory(false);
+                                        setNewCategoryInput("");
                                         setForm({ title: "", amount: "", type: "expense", category: "", date: new Date().toISOString().split('T')[0] });
                                     }}
                                     className="flex-1 px-8 py-3.5 bg-gray-900/50 hover:bg-gray-800 text-gray-400 border border-white/10 rounded-xl text-xs font-semibold tracking-widest uppercase transition-all"

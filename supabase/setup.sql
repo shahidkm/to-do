@@ -1,103 +1,70 @@
--- ─────────────────────────────────────────────
--- 1. Create push_subscriptions table
--- ─────────────────────────────────────────────
-create table if not exists push_subscriptions (
-  id       uuid default gen_random_uuid() primary key,
-  endpoint text unique not null,
-  subscription jsonb not null,
-  created_at timestamptz default now()
+-- Create push subscriptions table
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  endpoint TEXT UNIQUE NOT NULL,
+  subscription JSONB NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Allow the anon key to insert/delete (user's own device)
-alter table push_subscriptions enable row level security;
+-- Enable RLS
+ALTER TABLE push_subscriptions ENABLE ROW LEVEL SECURITY;
 
-create policy "Anyone can insert subscription"
-  on push_subscriptions for insert with check (true);
+-- Allow anyone to insert/delete subscriptions
+CREATE POLICY "Anyone can manage subscriptions" ON push_subscriptions
+  FOR ALL USING (true);
 
-create policy "Anyone can delete their subscription"
-  on push_subscriptions for delete using (true);
+-- Enable required extensions
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+CREATE EXTENSION IF NOT EXISTS pg_net;
 
--- Service role can read all (used by edge function)
-create policy "Service role reads all"
-  on push_subscriptions for select using (true);
-
-
--- ─────────────────────────────────────────────
--- 2. Enable extensions
--- ─────────────────────────────────────────────
-create extension if not exists pg_cron;
-create extension if not exists pg_net;
-
--- Set cron secret (replace with your actual secret)
-alter database postgres set "app.cron_secret" = 'myfriendapp2024';
-
--- ─────────────────────────────────────────────
--- 3. All cron jobs (IST = UTC+5:30)
--- ─────────────────────────────────────────────
-
--- Every 30 minutes — random pending todo reminder
-select cron.schedule(
+-- Todo reminder every 30 minutes (9 AM to 9 PM)
+SELECT cron.schedule(
   'todo-reminder-30min',
   '*/30 * * * *',
   $$
-  select net.http_post(
-    url    := 'https://quufeiwzsgiuwkeyjjns.supabase.co/functions/v1/todo-reminder',
-    headers := jsonb_build_object(
-      'Content-Type',  'application/json',
-      'Authorization', 'Bearer ' || current_setting('app.cron_secret', true)
-    ),
-    body   := '{}'::jsonb
+  SELECT net.http_post(
+    url := 'https://quufeiwzsgiuwkeyjjns.supabase.co/functions/v1/todo-reminder',
+    headers := jsonb_build_object('Content-Type', 'application/json'),
+    body := '{}'::jsonb
   );
   $$
 );
 
--- 7:00 AM IST (01:30 UTC) — Morning reminder to add todos
-select cron.schedule(
-  'morning-todo-reminder',
-  '30 1 * * *',
+-- Friends overdue reminder every day at 10 AM
+SELECT cron.schedule(
+  'send-push-daily',
+  '0 10 * * *',
   $$
-  select net.http_post(
-    url    := 'https://quufeiwzsgiuwkeyjjns.supabase.co/functions/v1/todo-reminder',
-    headers := jsonb_build_object(
-      'Content-Type',  'application/json',
-      'Authorization', 'Bearer ' || current_setting('app.cron_secret', true)
-    ),
-    body   := '{"type":"morning"}'::jsonb
+  SELECT net.http_post(
+    url := 'https://quufeiwzsgiuwkeyjjns.supabase.co/functions/v1/send-push',
+    headers := jsonb_build_object('Content-Type', 'application/json'),
+    body := '{}'::jsonb
   );
   $$
 );
 
--- 9:00 PM IST (15:30 UTC) — Night reminder to update todos
-select cron.schedule(
-  'night-todo-reminder',
-  '30 15 * * *',
+-- Morning notification at 8 AM
+SELECT cron.schedule(
+  'morning-reminder',
+  '0 8 * * *',
   $$
-  select net.http_post(
-    url    := 'https://quufeiwzsgiuwkeyjjns.supabase.co/functions/v1/todo-reminder',
-    headers := jsonb_build_object(
-      'Content-Type',  'application/json',
-      'Authorization', 'Bearer ' || current_setting('app.cron_secret', true)
-    ),
-    body   := '{"type":"night"}'::jsonb
+  SELECT net.http_post(
+    url := 'https://quufeiwzsgiuwkeyjjns.supabase.co/functions/v1/todo-reminder',
+    headers := jsonb_build_object('Content-Type', 'application/json'),
+    body := '{"type":"morning"}'::jsonb
   );
   $$
 );
 
--- 9:00 AM IST (03:30 UTC) — Daily overdue friends reminder
-select cron.schedule(
-  'daily-friend-reminder',
-  '30 3 * * *',
+-- Night notification at 9 PM
+SELECT cron.schedule(
+  'night-reminder',
+  '0 21 * * *',
   $$
-  select net.http_post(
-    url    := 'https://quufeiwzsgiuwkeyjjns.supabase.co/functions/v1/send-push',
-    headers := jsonb_build_object(
-      'Content-Type',  'application/json',
-      'Authorization', 'Bearer ' || current_setting('app.cron_secret', true)
-    ),
-    body   := '{}'::jsonb
+  SELECT net.http_post(
+    url := 'https://quufeiwzsgiuwkeyjjns.supabase.co/functions/v1/todo-reminder',
+    headers := jsonb_build_object('Content-Type', 'application/json'),
+    body := '{"type":"night"}'::jsonb
   );
   $$
 );
-
--- Verify all jobs:
--- select jobname, schedule, command from cron.job;
