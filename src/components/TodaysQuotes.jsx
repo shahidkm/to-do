@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Quote, Star, BookOpen, Film, Music, User, Sparkles, Heart, RefreshCw } from 'lucide-react';
+import { Quote, Star, BookOpen, Film, Music, User, Sparkles, Heart, RefreshCw, Clock } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = 'https://quufeiwzsgiuwkeyjjns.supabase.co';

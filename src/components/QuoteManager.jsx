@@ -434,7 +434,7 @@ export default function QuoteManager() {
                   {/* Footer */}
                   <div className="flex items-end justify-between mt-4 pt-4 border-t border-white/5">
                     <p className="text-[10px] font-mono text-gray-600">
-                      ID: {quote.id.substring(0, 8)} | {' '}
+                      ID: {String(quote.id).substring(0, 8)} | {' '}
                       {new Date(quote.created_at).toLocaleDateString()}
                     </p>
                     <div className="flex items-center gap-2">
